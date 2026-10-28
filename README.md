@@ -36,7 +36,12 @@ Hệ thống chỉ có một giao diện duy nhất: **trang quản trị nội 
   đưa ra (kỹ năng + trọng số, tiêu chí + yêu cầu), bên phải là kết quả quét CV tương ứng
   (trạng thái, giá trị thực tế, câu trích dẫn), xếp cùng hàng để so sánh trực tiếp.
   Kèm ô xem lại toàn văn JD và bộ đếm “x/y kỹ năng khớp · a/b tiêu chí đạt”.
-- Xem file CV gốc (PDF), chấm lại một hồ sơ hoặc **chấm lại toàn bộ** sau khi sửa JD.
+- Xem file CV gốc (PDF) ngay trong ứng dụng: modal hiển thị **từng trang CV** dưới dạng ảnh
+  (server kết xuất bằng PDFBox, xem được trên mọi trình duyệt kể cả khi trình duyệt chặn PDF nhúng),
+  kèm nút **Tải PDF gốc** và **Mở tab mới**, chấm lại một hồ sơ hoặc **chấm lại toàn bộ** sau khi sửa JD.
+- Phiên đăng nhập được lưu bằng **cookie `HttpOnly` (SameSite=Strict)** song song với token trong
+  `localStorage`, nên mở trực tiếp đường dẫn CV (dán URL, mở tab mới, bookmark) vẫn xác thực được —
+  không còn lỗi `401` như khi chỉ dựa vào header `X-Auth-Token`.
 - Ghi nhận **quyết định của HR** (Chưa xử lý / Mời phỏng vấn / Từ chối) kèm ghi chú nội bộ.
 
 **Xử lý CV**
@@ -253,7 +258,9 @@ Toàn bộ API đều là nội bộ, yêu cầu header `X-Auth-Token` lấy t�
 | `GET` | `/api/admin/applications/{id}` | Chi tiết báo cáo chấm điểm |
 | `POST` | `/api/admin/applications/{id}/rescore` | Chấm lại một hồ sơ |
 | `POST` | `/api/admin/applications/{id}/decision` | Lưu quyết định của HR |
-| `GET` | `/api/admin/applications/{id}/cv` | Tải/xem CV PDF gốc |
+| `GET` | `/api/admin/applications/{id}/cv` | Tải/xem CV PDF gốc (xác thực bằng header hoặc cookie) |
+| `GET` | `/api/admin/applications/{id}/cv/info` | Số trang, tên file, dung lượng CV |
+| `GET` | `/api/admin/applications/{id}/cv/pages/{page}` | Ảnh PNG của một trang CV (để xem trong ứng dụng) |
 | `GET` | `/api/admin/ai-status` | Trạng thái cấu hình AI và trọng số |
 
 ---

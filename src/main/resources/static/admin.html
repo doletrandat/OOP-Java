@@ -171,8 +171,38 @@
       <div class="modal-body" id="app-modal-body"></div>
       <div class="modal-foot">
         <button class="btn btn-outline" id="btn-rescore">🔄 Chấm lại với AI</button>
-        <a class="btn btn-outline" id="btn-view-cv" target="_blank">📄 Xem CV (PDF)</a>
+        <button class="btn btn-outline" id="btn-view-cv">📄 Xem CV (PDF)</button>
         <button class="btn btn-primary" data-close="app-modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Modal xem CV PDF ============ -->
+  <div class="modal-overlay" id="cv-modal">
+    <div class="modal" style="max-width:980px;">
+      <div class="modal-head">
+        <h3 id="cv-modal-title">CV ứng viên</h3>
+        <button class="icon-btn" data-close="cv-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="cv-toolbar">
+          <span class="muted" id="cv-meta" style="font-size:.88rem;"></span>
+          <div class="row" style="gap:8px;">
+            <button class="btn btn-outline btn-sm" id="btn-cv-download">⬇ Tải PDF gốc</button>
+            <button class="btn btn-outline btn-sm" id="btn-cv-newtab">↗ Mở tab mới</button>
+          </div>
+        </div>
+        <div class="cv-frame-wrap" id="cv-frame-wrap">
+          <div class="cv-loading" id="cv-loading">Đang tải CV…</div>
+          <div class="cv-pages" id="cv-pages"></div>
+        </div>
+        <p class="muted" style="font-size:.84rem;margin:8px 0 0;">
+          Trang CV được kết xuất từ file PDF gốc nên xem được trên mọi trình duyệt.
+          Cần bản đầy đủ để in hoặc trích dẫn? Bấm <b>Tải PDF gốc</b>.
+        </p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-primary" data-close="cv-modal">Đóng</button>
       </div>
     </div>
   </div>

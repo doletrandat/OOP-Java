@@ -415,14 +415,19 @@ async function openJobDetail(jobId) {
           <td>${a.criteriaTotal ? `${a.criteriaMet}/${a.criteriaTotal}` : `<span class="muted">—</span>`}</td>
           <td><span class="badge ${(DECISION_META[a.hrDecision] || DECISION_META.NEW).cls}">${(DECISION_META[a.hrDecision] || DECISION_META.NEW).label}</span></td>
           <td class="muted" style="font-size:.87rem;">${fmtTime(a.submittedAt)}</td>
-          <td style="text-align:right;"><a class="btn btn-outline btn-sm" href="/api/admin/applications/${esc(a.id)}/cv" target="_blank">PDF</a></td>
+          <td style="text-align:right;"><button class="btn btn-outline btn-sm" data-pdf="${esc(a.id)}" data-name="${esc(a.candidateName)}">PDF</button></td>
         </tr>`;
     }).join("") || `<tr><td colspan="10" class="muted" style="text-align:center;padding:28px;">Chưa có CV nào được tải lên cho vị trí này.</td></tr>`;
 
     tbody.querySelectorAll("[data-app]").forEach(tr =>
       tr.addEventListener("click", (e) => {
-        if (e.target.closest("a")) return;
+        if (e.target.closest("button, a")) return;
         openApplication(tr.dataset.app);
+      }));
+    tbody.querySelectorAll("[data-pdf]").forEach(btn =>
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openCvPdf(btn.dataset.pdf, btn, btn.dataset.name || "");
       }));
     window.scrollTo({ top: 0 });
   } catch (e) {
@@ -512,6 +517,153 @@ $("#cv-upload-form").addEventListener("submit", async (e) => {
 
 /* ================== Chi tiết hồ sơ ================== */
 
+let cvPageUrls = [];
+let cvPdfUrl = null;
+let cvFileName = "CV.pdf";
+let cvApplicationId = null;
+let cvBusy = false;
+
+/**
+ * Xem CV ngay trong modal.
+ *
+ * Vì sao không dùng <a href="/api/.../cv"> hay window.open trực tiếp:
+ *  - Điều hướng tab mới không gửi header X-Auth-Token → server trả 401.
+ *  - Nhiều trình duyệt/ứng dụng chặn xem PDF nhúng hoặc chặn blob URL mở
+ *    ở tab khác → khung xem trắng.
+ * Nên: tải thông tin CV kèm token, rồi tải từng trang đã kết xuất thành ảnh
+ * PNG (server render bằng PDFBox) và hiển thị trong modal. Bản PDF gốc vẫn
+ * tải được qua nút "Tải PDF gốc".
+ */
+async function openCvPdf(id, btn = null, label = "") {
+  const modal = $("#cv-modal");
+  const loading = $("#cv-loading");
+  const pagesBox = $("#cv-pages");
+
+  cvApplicationId = id;
+  releaseCvUrls();
+  pagesBox.innerHTML = "";
+  $("#cv-modal-title").textContent = label ? `CV: ${label}` : "CV ứng viên";
+  $("#cv-meta").textContent = "Đang tải…";
+  loading.textContent = "Đang tải CV…";
+  loading.classList.remove("hidden");
+  modal.classList.add("open");
+  pagesBox.scrollTop = 0;
+  if (btn) btn.disabled = true;
+  cvBusy = true;
+
+  try {
+    const info = await cvFetch(`/api/admin/applications/${id}/cv/info`);
+    const data = await info.json();
+    const total = Number(data.pages) || 0;
+    cvFileName = data.fileName || `CV_${id}.pdf`;
+    if (!total) throw new Error("File CV không có trang nào đọc được.");
+    $("#cv-meta").textContent =
+      `${cvFileName} · ${total} trang · ${(Number(data.sizeBytes || 0) / 1024).toFixed(0)} KB`;
+
+    for (let p = 1; p <= total; p++) {
+      loading.textContent = total > 1 ? `Đang tải trang ${p}/${total}…` : "Đang tải CV…";
+      const res = await cvFetch(`/api/admin/applications/${id}/cv/pages/${p}`);
+      const blob = await res.blob();
+      if (!blob.size) throw new Error(`Trang ${p} không đọc được.`);
+      const url = URL.createObjectURL(blob);
+      cvPageUrls.push(url);
+
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = `Trang ${p} của CV ${cvFileName}`;
+      img.loading = "lazy";
+      pagesBox.appendChild(img);
+    }
+    loading.classList.add("hidden");
+  } catch (e) {
+    loading.textContent = "Không mở được CV: " + e.message;
+    loading.classList.remove("hidden");
+    $("#cv-meta").textContent = "";
+    toast("Không mở được CV: " + e.message, true);
+  } finally {
+    cvBusy = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+/** fetch kèm token + chuẩn hoá thông báo lỗi cho các endpoint CV. */
+async function cvFetch(url) {
+  const res = await fetch(url, {
+    headers: state.token ? { "X-Auth-Token": state.token } : {},
+  });
+  if (!res.ok) {
+    let msg = `Lỗi ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data && data.error) msg = data.error;
+    } catch { /* không phải JSON */ }
+    if (res.status === 401) msg = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.";
+    throw new Error(msg);
+  }
+  return res;
+}
+
+/** Tải file PDF gốc (dùng cho nút tải về / mở tab mới). */
+async function loadCvFile() {
+  if (cvPdfUrl) return cvPdfUrl;
+  if (!cvApplicationId) throw new Error("Chưa chọn hồ sơ nào.");
+  const res = await cvFetch(`/api/admin/applications/${cvApplicationId}/cv`);
+  const blob = await res.blob();
+  if (!blob.size) throw new Error("File CV rỗng hoặc không đọc được.");
+  cvPdfUrl = URL.createObjectURL(blob);
+  return cvPdfUrl;
+}
+
+function releaseCvUrls() {
+  cvPageUrls.forEach(u => URL.revokeObjectURL(u));
+  cvPageUrls = [];
+  if (cvPdfUrl) {
+    URL.revokeObjectURL(cvPdfUrl);
+    cvPdfUrl = null;
+  }
+}
+
+function closeCvViewer() {
+  releaseCvUrls();
+  $("#cv-pages").innerHTML = "";
+  cvApplicationId = null;
+  $("#cv-modal").classList.remove("open");
+}
+
+async function downloadCvFile(btn) {
+  if (cvBusy) return;
+  if (btn) btn.disabled = true;
+  try {
+    const url = await loadCvFile();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = cvFileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    toast("Không tải được CV: " + e.message, true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/**
+ * Mở bản PDF gốc ở tab mới bằng link trực tiếp — server nhận diện phiên qua
+ * cookie HttpOnly (đã đồng bộ khi đăng nhập), nên tab mới không cần header.
+ * Nếu bị chặn popup thì tải file về.
+ */
+async function openCvInNewTab(btn) {
+  if (!cvApplicationId) return;
+  const win = window.open(`/api/admin/applications/${cvApplicationId}/cv`, "_blank");
+  if (win) return;
+  await downloadCvFile(btn);
+  toast("Trình duyệt chặn tab mới — CV đã được tải về thay vì mở.");
+}
+
+$("#btn-cv-download").addEventListener("click", (e) => downloadCvFile(e.currentTarget));
+$("#btn-cv-newtab").addEventListener("click", (e) => openCvInNewTab(e.currentTarget));
+
 async function openApplication(id) {
   try {
     const app = await api(`/api/admin/applications/${id}`);
@@ -521,7 +673,7 @@ async function openApplication(id) {
     const job = await api(`/api/admin/jobs/${app.jobId}`).catch(() => null);
 
     $("#app-modal-title").textContent = `Hồ sơ: ${app.candidateName}`;
-    $("#btn-view-cv").href = `/api/admin/applications/${id}/cv`;
+    $("#btn-view-cv").onclick = () => openCvPdf(id, $("#btn-view-cv"), app.candidateName);
 
     const skillMatches = (r && r.skillMatches) || [];
     const criteriaResults = (r && r.criteriaResults) || [];
@@ -749,6 +901,13 @@ document.querySelectorAll(".modal-overlay").forEach(ov => {
   });
   ov.querySelectorAll("[data-close]").forEach(b =>
     b.addEventListener("click", () => ov.classList.remove("open")));
+});
+
+// Đóng khung xem CV thì giải phóng blob URL (tránh giữ file PDF trong bộ nhớ)
+document.querySelectorAll("#cv-modal [data-close]").forEach(b =>
+  b.addEventListener("click", closeCvViewer));
+$("#cv-modal").addEventListener("click", (e) => {
+  if (e.target.id === "cv-modal") closeCvViewer();
 });
 
 /* ================== Start ================== */

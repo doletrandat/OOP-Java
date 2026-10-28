@@ -92,6 +92,8 @@ public class WebServer {
             byte[] bytes = in.readAllBytes();
             String type = CONTENT_TYPES.getOrDefault(extensionOf(filePath), "application/octet-stream");
             ex.getResponseHeaders().set("Content-Type", type);
+            // Luôn hỏi lại server để bản cập nhật JS/CSS có hiệu lực ngay
+            ex.getResponseHeaders().set("Cache-Control", "no-cache");
             ex.sendResponseHeaders(200, bytes.length);
             try (OutputStream os = ex.getResponseBody()) {
                 os.write(bytes);

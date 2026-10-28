@@ -9,7 +9,13 @@ import com.ptit.cvrecruiter.model.MatchStatus;
 import com.ptit.cvrecruiter.service.ApplicationService;
 import com.ptit.cvrecruiter.service.JobService;
 import com.sun.net.httpserver.HttpExchange;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,11 +49,16 @@ public class AdminController {
                 Http.sendError(ex, 401, "Mat khau khong dung.");
                 return;
             }
+            // Cookie để các link trực tiếp (mở tab mới, dán URL) cũng xác thực được:
+            // trình duyệt tự gửi cookie, còn header X-Auth-Token thì chỉ fetch mới gửi.
+            ex.getResponseHeaders().add("Set-Cookie", AUTH_COOKIE + "=" + token.get()
+                    + "; Path=/; HttpOnly; SameSite=Strict");
             Http.sendJson(ex, 200, Map.of("token", token.get()));
         });
 
         router.add("POST", "/api/auth/logout", (ex, params) -> {
-            auth.logout(ex.getRequestHeaders().getFirst("X-Auth-Token"));
+            auth.logout(tokenOf(ex));
+            ex.getResponseHeaders().add("Set-Cookie", AUTH_COOKIE + "=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
             Http.sendJson(ex, 200, Map.of("ok", true));
         });
 
@@ -170,13 +181,9 @@ public class AdminController {
         });
 
         router.add("GET", "/api/admin/applications/{id}/cv", (ex, params) -> {
-            requireAuth(ex);
-            Application app = applicationService.get(params.get("id"));
+            Application app = requireCvFile(ex, params.get("id"));
+            if (app == null) return;
             Path cvPath = Path.of(app.getCvPath());
-            if (!Files.exists(cvPath)) {
-                Http.sendError(ex, 404, "File CV khong con ton tai tren may chu.");
-                return;
-            }
             byte[] bytes = Files.readAllBytes(cvPath);
             ex.getResponseHeaders().set("Content-Type", "application/pdf");
             ex.getResponseHeaders().set("Content-Disposition",
@@ -186,14 +193,112 @@ public class AdminController {
                 os.write(bytes);
             }
         });
+
+        // Thông tin CV: số trang, tên file, dung lượng
+        router.add("GET", "/api/admin/applications/{id}/cv/info", (ex, params) -> {
+            Application app = requireCvFile(ex, params.get("id"));
+            if (app == null) return;
+            Path cvPath = Path.of(app.getCvPath());
+            int pages;
+            try (PDDocument doc = Loader.loadPDF(cvPath.toFile())) {
+                pages = doc.getNumberOfPages();
+            }
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("pages", pages);
+            body.put("fileName", app.getCvFileName());
+            body.put("sizeBytes", Files.size(cvPath));
+            Http.sendJson(ex, 200, body);
+        });
+
+        // Ảnh từng trang CV (PNG): dùng khi trình duyệt chặn xem PDF nhúng.
+        // Trang tính từ 1.
+        router.add("GET", "/api/admin/applications/{id}/cv/pages/{page}", (ex, params) -> {
+            Application app = requireCvFile(ex, params.get("id"));
+            if (app == null) return;
+            Path cvPath = Path.of(app.getCvPath());
+            int pageNumber;
+            try {
+                pageNumber = Integer.parseInt(params.get("page"));
+            } catch (NumberFormatException e) {
+                Http.sendError(ex, 400, "So trang khong hop le.");
+                return;
+            }
+            byte[] png;
+            try (PDDocument doc = Loader.loadPDF(cvPath.toFile())) {
+                if (pageNumber < 1 || pageNumber > doc.getNumberOfPages()) {
+                    Http.sendError(ex, 404, "Trang khong ton tai trong CV.");
+                    return;
+                }
+                BufferedImage image = new PDFRenderer(doc)
+                        .renderImageWithDPI(pageNumber - 1, RENDER_DPI);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", out);
+                png = out.toByteArray();
+            }
+            ex.getResponseHeaders().set("Content-Type", "image/png");
+            ex.getResponseHeaders().set("Cache-Control", "private, max-age=300");
+            ex.sendResponseHeaders(200, png.length);
+            try (var os = ex.getResponseBody()) {
+                os.write(png);
+            }
+        });
     }
+
+    /** Độ phân giải khi kết xuất CV thành ảnh (đủ nét để đọc, không quá nặng). */
+    private static final float RENDER_DPI = 110f;
+
+    /**
+     * Lấy hồ sơ và kiểm tra file CV còn trên đĩa. Trả null (đã gửi lỗi 404) nếu thiếu.
+     */
+    private Application requireCvFile(HttpExchange ex, String applicationId) {
+        requireAuth(ex);
+        Application app = applicationService.get(applicationId);
+        if (!Files.exists(Path.of(app.getCvPath()))) {
+            Http.sendError(ex, 404, "File CV khong con ton tai tren may chu.");
+            return null;
+        }
+        return app;
+    }
+
+    /** Tên cookie lưu token đăng nhập (HttpOnly, SameSite=Strict). */
+    private static final String AUTH_COOKIE = "cvr_admin_token";
 
     /** Lỗi xác thực được Router bắt và trả về 401. */
     private void requireAuth(HttpExchange ex) {
-        String token = ex.getRequestHeaders().getFirst("X-Auth-Token");
+        String token = tokenOf(ex);
         if (!auth.isValid(token)) {
             throw new AuthException();
         }
+        // Phiên cũ chỉ có token trong localStorage → đồng bộ sang cookie để link trực tiếp dùng được
+        if (!token.equals(cookieToken(ex))) {
+            ex.getResponseHeaders().add("Set-Cookie", AUTH_COOKIE + "=" + token
+                    + "; Path=/; HttpOnly; SameSite=Strict");
+        }
+    }
+
+    /**
+     * Lấy token từ header X-Auth-Token (fetch của JS), Authorization: Bearer,
+     * hoặc cookie — nhờ cookie mà mở link trực tiếp/mở tab mới vẫn xác thực được.
+     */
+    private static String tokenOf(HttpExchange ex) {
+        String header = ex.getRequestHeaders().getFirst("X-Auth-Token");
+        if (header != null && !header.isBlank()) return header;
+
+        String authorization = ex.getRequestHeaders().getFirst("Authorization");
+        if (authorization != null && authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            return authorization.substring(7).trim();
+        }
+        return cookieToken(ex);
+    }
+
+    private static String cookieToken(HttpExchange ex) {
+        for (String cookie : ex.getRequestHeaders().getOrDefault("Cookie", java.util.List.of())) {
+            for (String part : cookie.split(";")) {
+                String[] kv = part.trim().split("=", 2);
+                if (kv.length == 2 && kv[0].equals(AUTH_COOKIE)) return kv[1];
+            }
+        }
+        return null;
     }
 
     private Map<String, Object> jobWithCount(JobPosting job) {
