@@ -1,0 +1,49 @@
+# Sao chép file này thành config.properties rồi điền giá trị thật.
+# Có thể dùng biến môi trường thay thế: GEMINI_API_KEY, ADMIN_PASSWORD, PORT, AI_WEIGHT, ...
+
+PORT=8080
+
+# Khoá Gemini API lấy tại https://aistudio.google.com/apikey
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash
+
+# Mật khẩu đăng nhập trang /admin (đổi trước khi dùng thật)
+ADMIN_PASSWORD=admin123
+
+# Trọng số tiêu chí AI trong điểm tổng (0..1). 0.4 = 40% AI, 60% điểm quy tắc.
+AI_WEIGHT=0.4
+
+# Trong phần điểm quy tắc: tỉ lệ dành cho tiêu chí bổ sung (kinh nghiệm,
+# trình độ, ngoại ngữ, chứng chỉ...). Chỉ áp dụng khi vị trí có tiêu chí.
+# 0.35 = 65% kỹ năng + 35% tiêu chí bổ sung.
+CRITERIA_WEIGHT=0.35
+
+# ================== Nhà cung cấp AI ==================
+# gemini  = Google Gemini (API gốc)
+# deepseek= DeepSeek (nhanh, rẻ; tương thích OpenAI)
+# openai  = OpenAI hoặc endpoint tương thích OpenAI (Groq, OpenRouter, Ollama, vLLM...)
+# none    = tắt AI, chỉ chấm bằng quy tắc
+#
+# Nếu bỏ trống AI_PROVIDER: tự dùng gemini khi có GEMINI_API_KEY, ngược lại dùng
+# AI_API_KEY với endpoint OpenAI.
+AI_PROVIDER=gemini
+
+# Khoá API dùng chung cho provider đang chọn (Gemini vẫn đọc được GEMINI_API_KEY cũ)
+# AI_API_KEY=
+
+# Chỉ cần đổi khi dùng DeepSeek/OpenAI/Groq/OpenRouter/Ollama.
+# DeepSeek:   https://api.deepseek.com/v1   · model: deepseek-chat
+# Groq:       https://api.groq.com/openai/v1
+# OpenRouter: https://openrouter.ai/api/v1
+# Ollama:     http://localhost:11434/v1     (không cần API key)
+# AI_BASE_URL=https://api.deepseek.com/v1
+# AI_MODEL=deepseek-chat
+
+# Model dự phòng khi model chính quá tải / bị gỡ (cách nhau bằng dấu phẩy)
+# AI_FALLBACK_MODELS=gemini-3.6-flash
+AI_TIMEOUT_SECONDS=60
+
+# Thư mục lưu dữ liệu và CV
+DATA_DIR=data
+UPLOADS_DIR=uploads
+MAX_UPLOAD_MB=15

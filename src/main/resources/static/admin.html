@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV Screener — Quản trị tuyển dụng</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234f46e5'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>CV</text></svg>">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a class="brand" href="/admin">
+        <span class="logo">CV</span> CV Screener <span class="muted" style="font-weight:500;font-size:.9rem;">· Quản trị</span>
+      </a>
+      <div class="nav-right" id="nav-right"></div>
+    </div>
+  </nav>
+
+  <!-- ============ Đăng nhập ============ -->
+  <div id="login-view" class="login-wrap hidden">
+    <div class="card login-card">
+      <h2 style="margin:0 0 4px;">Đăng nhập quản trị</h2>
+      <p class="muted" style="margin-top:0;">Khu vực nội bộ dành cho HR quản lý vị trí, tải CV PDF và xếp hạng ứng viên.</p>
+      <form id="login-form">
+        <label class="field">
+          <span>Mật khẩu</span>
+          <input type="password" id="login-password" required placeholder="Nhập mật khẩu admin">
+        </label>
+        <div id="login-error" class="alert error hidden"></div>
+        <button type="submit" class="btn btn-primary btn-block" id="login-btn">Đăng nhập</button>
+      </form>
+      <p class="muted" style="font-size:.85rem;margin-bottom:0;">
+        Mặc định: <code>admin123</code> (đổi qua biến môi trường <code>ADMIN_PASSWORD</code>)
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ Ứng dụng ============ -->
+  <div id="app-view" class="hidden">
+    <main class="container">
+
+      <!-- Danh sách vị trí -->
+      <section id="jobs-view">
+        <div class="row spread" style="margin-top:28px;">
+          <div>
+            <h1 class="page-title" style="margin:0;">Vị trí tuyển dụng</h1>
+            <p class="page-sub" style="margin-bottom:0;">Tạo vị trí, tải CV PDF do ứng viên gửi và xem bảng xếp hạng đã chấm điểm.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-new-job">＋ Tạo vị trí</button>
+        </div>
+
+        <div class="card mt table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Vị trí</th><th>Phòng ban</th><th>Kỹ năng</th>
+                <th>Hồ sơ</th><th>Trạng thái</th><th style="text-align:right;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Chi tiết vị trí + xếp hạng ứng viên -->
+      <section id="job-detail-view" class="hidden">
+        <a href="/admin" class="backlink">← Tất cả vị trí</a>
+        <div id="job-detail-info" class="mt"></div>
+
+        <!-- HR tải CV lên (ứng viên không trực tiếp nộp trên hệ thống) -->
+        <div class="card mt" id="cv-upload-card">
+          <h3 style="margin:0 0 2px;">Tải CV ứng viên lên</h3>
+          <p class="muted" style="margin:0 0 4px;font-size:.9rem;">
+            HR tải file PDF do ứng viên gửi qua email/kênh tuyển dụng. Hệ thống tự trích xuất văn bản và chấm điểm ngay.
+          </p>
+          <form id="cv-upload-form">
+            <div class="row" style="align-items:flex-start;">
+              <label class="field" style="flex:1;min-width:180px;">
+                <span>Họ tên ứng viên *</span>
+                <input type="text" id="cv-name" required placeholder="Nguyễn Văn A">
+              </label>
+              <label class="field" style="flex:1;min-width:180px;">
+                <span>Email</span>
+                <input type="email" id="cv-email" placeholder="ungvien@email.com">
+              </label>
+              <label class="field" style="flex:1;min-width:150px;">
+                <span>Số điện thoại</span>
+                <input type="tel" id="cv-phone" placeholder="09xx xxx xxx">
+              </label>
+            </div>
+
+            <label class="field">
+              <span>File CV (PDF) *</span>
+              <div class="file-drop" id="cv-drop">
+                <div id="cv-drop-text">📥 Kéo thả file PDF vào đây hoặc <b>nhấn để chọn file</b></div>
+                <input type="file" id="cv-file" accept=".pdf,application/pdf" hidden>
+              </div>
+              <small>Chỉ nhận PDF có văn bản (không phải ảnh scan).</small>
+            </label>
+
+            <div id="cv-upload-error" class="alert error hidden"></div>
+            <button type="submit" class="btn btn-primary" id="cv-upload-btn">Tải lên &amp; chấm điểm</button>
+          </form>
+        </div>
+
+        <h2 class="page-title" style="font-size:1.25rem;">Ứng viên (xếp theo điểm tổng)</h2>
+        <p class="page-sub">Nhấn vào từng dòng để xem chi tiết chấm điểm, kỹ năng khớp và bằng chứng trích dẫn.</p>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Ứng viên</th><th>Điểm tổng</th><th>Từ khoá</th>
+                <th>AI</th><th>Kỹ năng khớp</th><th>Tiêu chí đạt</th><th>Quyết định HR</th><th>Nộp lúc</th><th style="text-align:right;">CV</th>
+              </tr>
+            </thead>
+            <tbody id="apps-tbody"></tbody>
+          </table>
+        </div>
+        <div id="apps-empty" class="card mt muted hidden">Chưa có ứng viên nào nộp CV cho vị trí này.</div>
+      </section>
+
+      <footer class="site">
+        ⚖️ AI chỉ chấm điểm tham khảo để hỗ trợ HR sàng lọc — quyết định mời phỏng vấn/tuyển dụng luôn do con người đưa ra.
+      </footer>
+    </main>
+  </div>
+
+  <!-- ============ Modal tạo/sửa vị trí ============ -->
+  <div class="modal-overlay" id="job-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="job-modal-title">Tạo vị trí tuyển dụng</h3>
+        <button class="icon-btn" data-close="job-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field"><span>Tên vị trí *</span>
+          <input type="text" id="jf-title" placeholder="VD: Lập trình viên Java Backend"></label>
+        <label class="field"><span>Phòng ban</span>
+          <input type="text" id="jf-dept" placeholder="VD: Phòng Kỹ thuật"></label>
+        <label class="field"><span>Mô tả công việc (JD)</span>
+          <textarea id="jf-desc" placeholder="Mô tả nhiệm vụ, yêu cầu, quyền lợi..."></textarea></label>
+
+        <label class="field"><span>Kỹ năng cần tìm * <small class="muted">— hệ thống sẽ đối chiếu cả từ đồng nghĩa Việt–Anh với CV</small></span></label>
+        <div id="jf-skills"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="jf-add-skill">＋ Thêm kỹ năng</button>
+
+        <label class="field mt"><span>Tiêu chí bổ sung <small class="muted">— kinh nghiệm, trình độ đào tạo, ngoại ngữ, chứng chỉ… (không bắt buộc)</small></span></label>
+        <p class="muted" style="margin:0 0 8px;font-size:.85rem;">
+          Mỗi tiêu chí được đối chiếu tự động với nội dung CV và hiển thị bằng chứng trích dẫn để HR kiểm chứng.
+          <br>Kinh nghiệm: nhập số năm tối thiểu. Trình độ: Trung cấp / Cao đẳng / Đại học / Thạc sĩ / Tiến sĩ.
+          Ngoại ngữ: TOEIC 600, IELTS 6.0… Chứng chỉ / khác: liệt kê từ khoá, cách nhau bằng dấu phẩy.
+        </p>
+        <div id="jf-criteria"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="jf-add-criterion">＋ Thêm tiêu chí</button>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" data-close="job-modal">Huỷ</button>
+        <button class="btn btn-primary" id="jf-save">Lưu vị trí</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Modal chi tiết hồ sơ ============ -->
+  <div class="modal-overlay" id="app-modal">
+    <div class="modal" style="max-width:1120px;">
+      <div class="modal-head">
+        <h3 id="app-modal-title">Hồ sơ ứng tuyển</h3>
+        <button class="icon-btn" data-close="app-modal">✕</button>
+      </div>
+      <div class="modal-body" id="app-modal-body"></div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" id="btn-rescore">🔄 Chấm lại với AI</button>
+        <a class="btn btn-outline" id="btn-view-cv" target="_blank">📄 Xem CV (PDF)</a>
+        <button class="btn btn-primary" data-close="app-modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-zone" id="toast-zone"></div>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

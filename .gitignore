@@ -1,0 +1,15 @@
+# Bí mật cấu hình cục bộ (chứa GEMINI_API_KEY)
+config.properties
+
+# Dữ liệu người dùng và CV tải lên
+data/
+uploads/
+
+# Kết quả build
+target/
+dependency-reduced-pom.xml
+
+# IDE
+.idea/
+*.iml
+.vscode/
