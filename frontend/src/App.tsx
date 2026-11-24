@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { JobEditorSheet } from "@/components/job-editor-sheet"
+import { JobEditor } from "@/components/job-editor"
 import { JobWorkspace } from "@/components/job-workspace"
 import { LoginPage } from "@/components/login-page"
 import { OverviewPage } from "@/components/overview-page"
@@ -110,7 +110,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         ) : null}
       </SidebarInset>
 
-      <JobEditorSheet
+      <JobEditor
         open={editing !== undefined}
         job={editing ?? null}
         onOpenChange={(o) => !o && setEditing(undefined)}

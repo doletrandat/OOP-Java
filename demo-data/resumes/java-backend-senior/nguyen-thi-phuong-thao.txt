@@ -1,0 +1,29 @@
+@style elegant
+@accent #0e7490
+@photo ../../photos/nguyen-thi-phuong-thao.jpg
+# Nguyễn Thị Phương Thảo
+> Java Backend Developer
+> thao.nguyenphuong@example.com · 0986 552 103 · Quận Tân Bình, TP.HCM
+
+## Tóm tắt
+4 năm phát triển backend bằng Java cho sàn thương mại điện tử và hệ thống đặt vé. Mạnh về Spring Boot và thiết kế cơ sở dữ liệu, đã làm microservices và Kafka trong 2 năm gần nhất. Muốn chuyển sang lĩnh vực tài chính.
+
+## Kinh nghiệm
+= Backend Developer · Sàn thương mại điện tử Chợ Lớn Online | 2022 đến nay
+- Xây dựng dịch vụ đơn hàng và khuyến mãi bằng Java 17, Spring Boot, theo kiến trúc microservices.
+- Dùng Kafka để đồng bộ tồn kho giữa 3 dịch vụ trong các đợt sale lớn, chịu tải 2.000 đơn mỗi phút.
+- Viết REST API và tối ưu SQL trên MySQL; giảm 60% thời gian tải trang lịch sử đơn hàng.
+- Đóng gói dịch vụ bằng Docker, triển khai qua Jenkins.
+= Java Developer · Công ty Du lịch Việt Lữ | 2021 đến 2022
+- Phát triển hệ thống đặt vé xe khách bằng Spring Boot và MySQL.
+- Tích hợp cổng thanh toán VNPay và MoMo.
+
+## Kỹ năng
+- Java, Spring Boot, Spring Data JPA, JUnit
+- Microservices, REST API, Kafka
+- SQL: MySQL, PostgreSQL; Redis cơ bản
+- Docker, Jenkins, Git
+- Tiếng Anh: TOEIC 690
+
+## Học vấn
+= Đại học Khoa học Tự nhiên TP.HCM · Cử nhân Công nghệ thông tin | 2016 đến 2020

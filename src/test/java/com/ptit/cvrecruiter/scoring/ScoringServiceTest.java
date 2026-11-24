@@ -78,10 +78,11 @@ class ScoringServiceTest {
 
         MatchReport report = service.score(job, "Tôi có kinh nghiệm Java và SQL.");
 
-        assertEquals(80.0, report.getKeywordScore());
+        // Java, SQL khớp từ khoá; Docker không có từ khoá nhưng AI tìm thấy → đủ 3 kỹ năng
+        assertEquals(100.0, report.getKeywordScore());
         assertEquals(50.0, report.getAiScore());
-        // 80 * 0.6 + 50 * 0.4 = 68
-        assertEquals(68.0, report.getFinalScore());
+        // 100 * 0.6 + 50 * 0.4 = 80
+        assertEquals(80.0, report.getFinalScore());
         assertEquals(AiStatus.OK, report.getAiStatus());
         assertEquals("Khá phù hợp", report.getAiSummary());
 
@@ -93,6 +94,43 @@ class ScoringServiceTest {
         SkillMatch java = report.getSkillMatches().stream()
                 .filter(s -> s.getSkillName().equals("Java")).findFirst().orElseThrow();
         assertEquals(EvidenceSource.KEYWORD, java.getSource());
+    }
+
+    @Test
+    void aiCanDowngradeListedOnlySkills() {
+        AiAnalysis analysis = JsonUtil.gson().fromJson("""
+                {"aiScore": 25, "summary": "Chỉ liệt kê",
+                 "skills": [
+                   {"skill": "Java", "status": "MATCHED", "evidence": "Viết API bằng Java", "note": ""},
+                   {"skill": "SQL", "status": "UNCERTAIN", "evidence": "", "note": "Chỉ có trong danh sách kỹ năng"},
+                   {"skill": "Docker", "status": "MISSING", "evidence": "", "note": "Nhắc tới để đùa"}]}
+                """, AiAnalysis.class);
+        AiAnalyzer ai = new AiAnalyzer() {
+            @Override
+            public boolean isConfigured() {
+                return true;
+            }
+
+            @Override
+            public AiResult analyze(JobPosting job, String cvText) {
+                return AiResult.ok(analysis);
+            }
+        };
+        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), ai, 0.4);
+
+        MatchReport report = service.score(job, "Viết API bằng Java. Kỹ năng: SQL, Docker.");
+
+        SkillMatch sql = report.getSkillMatches().stream()
+                .filter(s -> s.getSkillName().equals("SQL")).findFirst().orElseThrow();
+        assertEquals(com.ptit.cvrecruiter.model.MatchStatus.UNCERTAIN, sql.getStatus());
+        assertEquals(EvidenceSource.BOTH, sql.getSource());
+        assertEquals("Chỉ có trong danh sách kỹ năng", sql.getAiNote());
+        SkillMatch docker = report.getSkillMatches().stream()
+                .filter(s -> s.getSkillName().equals("Docker")).findFirst().orElseThrow();
+        assertEquals(com.ptit.cvrecruiter.model.MatchStatus.UNCERTAIN, docker.getStatus());
+        // Java đủ 2 + SQL nửa 1 + Docker nửa 0.5 = 3.5 trên 5 → 70
+        assertEquals(70.0, report.getKeywordScore());
+        assertEquals(1, report.countByStatus(com.ptit.cvrecruiter.model.MatchStatus.MATCHED));
     }
 
     @Test

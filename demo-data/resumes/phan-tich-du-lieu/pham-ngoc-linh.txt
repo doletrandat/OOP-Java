@@ -1,0 +1,41 @@
+@style banner
+@accent #0f766e
+@photo ../../photos/pham-ngoc-linh.jpg
+# Phạm Ngọc Linh
+> Chuyên viên Phân tích Dữ liệu · Đà Nẵng
+> 0900 000 002 (số mẫu) · ngoclinh.demo@example.com
+
+## Mục tiêu
+Chuyên viên phân tích dữ liệu có 2 năm kinh nghiệm trong mảng chăm sóc khách hàng và thương mại điện tử. Có thể dùng SQL, Excel và Power BI để theo dõi KPI, tìm nguyên nhân biến động và trao đổi kết quả với các nhóm nghiệp vụ.
+
+## Kinh nghiệm làm việc
+= Chuyên viên Phân tích Kinh doanh · Công ty TNHH Thương mại Biển Xanh | 02/2024 đến nay
+- Duy trì dashboard Power BI theo dõi đơn hàng, tỷ lệ hủy và thời gian phản hồi; làm mới dữ liệu hằng ngày từ các bảng SQL.
+- Dùng SQL (JOIN, CASE WHEN, CTE) để phân tích khoảng 600.000 tương tác hỗ trợ khách hàng, tổng hợp theo kênh, nhóm vấn đề và tuần.
+- Phối hợp với nhóm CS để thống nhất định nghĩa 9 KPI; trình bày xu hướng và giới hạn dữ liệu trong buổi rà soát tháng.
+- Phân tích nhóm ticket trễ SLA, đề xuất bổ sung phân loại nguyên nhân; tỷ lệ ticket thiếu mã nguyên nhân giảm 14 điểm phần trăm sau 10 tuần.
+= Trợ lý báo cáo · Công ty Cổ phần Du lịch Mở | 06/2023 đến 01/2024
+- Tổng hợp bảng đặt dịch vụ và hoàn tiền bằng Excel; đối chiếu số liệu giữa nhóm vận hành và kế toán.
+- Chuẩn bị báo cáo tuần và ghi nhận yêu cầu cập nhật chỉ số từ các trưởng nhóm.
+
+## Dự án tiêu biểu
+= Dashboard theo dõi chất lượng hỗ trợ khách hàng · Dự án nội bộ | 2025
+- Kết hợp SQL và Power BI trên dữ liệu 6 tháng; thiết kế trang tổng quan và trang phân tích theo nhóm vấn đề, kênh và thời gian xử lý.
+- Nhận thấy 3 chủ đề chiếm 41% yêu cầu liên hệ lại; đề xuất theo dõi riêng và bổ sung hướng dẫn trả lời.
+- Chỉ số và dữ liệu đã được làm ẩn danh trong bản minh họa.
+
+## Kỹ năng
+- SQL: JOIN, CTE, CASE WHEN
+- Excel: PivotTable, Power Query
+- Power BI: Power Query, DAX cơ bản
+- Phân tích dữ liệu: KPI, xu hướng, phân nhóm
+- Giao tiếp: trình bày phát hiện và giới hạn của dữ liệu
+- Làm việc nhóm: phối hợp CS, vận hành, kế toán
+
+## Học vấn và ngoại ngữ
+= Đại học Kinh tế, Đại học Đà Nẵng · Cử nhân Thống kê kinh tế | 2019 đến 2023
+- GPA 3,30/4,00
+- Tiếng Anh: IELTS 6.5 (2024, giả định)
+
+## Ghi chú
+Phạm vi hồ sơ: có SQL, phân tích dữ liệu, Excel, giao tiếp, teamwork và Power BI; chưa thể hiện Python hoặc thống kê ứng dụng chuyên sâu. Hồ sơ minh hoạ: thông tin và thành tích đều hư cấu.

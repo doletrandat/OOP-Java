@@ -1,0 +1,27 @@
+@style modern
+@accent #c2410c
+# David Pham
+> Java Software Engineer
+> david.pham.java@example.com · +84 935 118 402 · Da Nang
+
+## Profile
+Java engineer with 3 years of experience maintaining enterprise applications for insurance clients. Comfortable with Spring and relational databases. I have worked mostly on a large monolith and would like to learn microservices and event-driven systems.
+
+## Experience
+= Software Engineer · Asia Insure Technology | 2022 to present
+- Maintain a policy management system built with Java 11, Spring MVC and Oracle (about 400k lines of code).
+- Build REST API endpoints for the agent portal and fix production bugs reported by the support team.
+- Write SQL reports and stored procedures for monthly premium calculations.
+- Started migrating two modules to Spring Boot; containerized them with Docker for the test environment.
+= Junior Developer · Bright Outsourcing | 2021 to 2022
+- Java and JSP pages for a hotel booking website.
+
+## Skills
+- Java, Spring MVC, Spring Boot (learning), Hibernate
+- SQL: Oracle, PL/SQL
+- REST API, SOAP web services
+- Git, Maven, Docker basics
+- English: IELTS 6.5
+
+## Education
+= Da Nang University of Technology · Bachelor of Information Technology | 2017 to 2021

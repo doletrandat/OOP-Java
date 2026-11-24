@@ -1,0 +1,25 @@
+@style classic
+@photo ../../photos/kevin-le.jpg
+# Kevin Le
+> Customer Service Executive · kevin.le.cs@example.com · 0933 870 214 · Binh Thanh, HCMC
+
+## Profile
+Customer service executive at a shipping line with 1.5 years of experience handling export bookings. I would like to move into a sales role where I can build my own customer portfolio.
+
+## Experience
+= Customer Service Executive · Ocean Bridge Shipping Agency | 01/2024 to present
+- Handle bookings, shipping schedules and bill of lading corrections for around 60 forwarders.
+- Answer customer questions by phone and email in English and Vietnamese.
+- Help the sales team prepare quotations and follow up with customers on renewals.
+- Learned the basics of logistics documents and customs procedures for export shipments.
+= Part-time Sales Assistant · Uniqlo Dong Khoi | 2022 to 2023
+- Retail sales and customer care during university.
+
+## Skills
+- Customer care, email communication, problem solving
+- Basic knowledge of logistics and Incoterms
+- Microsoft Excel, Outlook
+- English: TOEIC 830
+
+## Education
+= Ho Chi Minh City University of Economics · Bachelor of International Business | 2019 to 2023

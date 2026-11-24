@@ -1,0 +1,25 @@
+@style classic
+@photo ../../photos/nguyen-minh-khoa.jpg
+# NGUYỄN MINH KHOA
+> Kế toán viên · 0909 112 378 · khoa.nm.ketoan@example.com · Long Biên, Hà Nội
+
+## Mục tiêu nghề nghiệp
+Tìm vị trí kế toán tổng hợp để học thêm về lập báo cáo tài chính và quyết toán thuế, gắn bó lâu dài với công ty.
+
+## Kinh nghiệm
+= Kế toán kho và thanh toán · Công ty TNHH Thương mại Việt Hưng | 01/2023 đến nay
+- Nhập liệu chứng từ mua hàng, bán hàng trên phần mềm MISA.
+- Đối chiếu tồn kho với thủ kho cuối tháng, lập phiếu nhập xuất.
+- Theo dõi thanh toán cho nhà cung cấp, đối chiếu sổ phụ ngân hàng.
+- Hỗ trợ kế toán trưởng chuẩn bị số liệu kê khai thuế GTGT hằng tháng.
+= Thực tập kế toán · Công ty Dịch vụ Kế toán An Tâm | 06/2022 đến 09/2022
+- Sắp xếp chứng từ, nhập hoá đơn cho khách hàng là hộ kinh doanh.
+
+## Kỹ năng
+- Phần mềm MISA, Excel (VLOOKUP, SUMIF, Pivot cơ bản)
+- Hiểu quy trình kế toán thanh toán, kế toán kho
+- Cẩn thận, chịu được áp lực cuối tháng
+
+## Học vấn
+= Cao đẳng Kinh tế Kỹ thuật Thương mại · Kế toán doanh nghiệp | 2019 đến 2022
+- Đang học liên thông Đại học ngành Kế toán (dự kiến tốt nghiệp 2026)

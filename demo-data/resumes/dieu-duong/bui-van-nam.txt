@@ -1,0 +1,23 @@
+@style modern
+@accent #15803d
+# Bùi Văn Nam
+> Điều dưỡng mới tốt nghiệp · 0978 220 914 · nam.buivan.dd@example.com · Hà Đông, Hà Nội
+
+## Mục tiêu
+Mới tốt nghiệp Cao đẳng Điều dưỡng, mong muốn được làm việc tại khoa Nội để tích luỹ kinh nghiệm lâm sàng.
+
+## Thực tập lâm sàng
+= Thực tập sinh · Bệnh viện Đa khoa Hà Đông | 01/2025 đến 06/2025
+- Chăm sóc người bệnh tại khoa Nội và khoa Ngoại dưới sự hướng dẫn của điều dưỡng trưởng.
+- Đo dấu hiệu sinh tồn, hỗ trợ tiêm truyền, thay băng vết thương.
+- Ghi phiếu theo dõi và hồ sơ bệnh án giấy.
+
+## Học vấn
+= Cao đẳng Y tế Hà Đông · Điều dưỡng | 2022 đến 2025
+- Tốt nghiệp loại Khá
+- Chứng chỉ sơ cứu cơ bản (Hội Chữ thập đỏ, 2024)
+- Đang chờ thời gian thực hành để được cấp chứng chỉ hành nghề
+
+## Kỹ năng
+- Chăm sóc người bệnh cơ bản, tiêm truyền, sơ cứu
+- Tin học văn phòng

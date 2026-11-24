@@ -24,8 +24,21 @@ import java.util.regex.Pattern;
  */
 public class CriteriaEvaluator {
 
+    /**
+     * "4 năm", "2,5 years", "3+ yrs". Số phải đứng riêng (không phải đuôi của số điện thoại
+     * "0978 220 914") và chữ "năm" không được là đầu của email ("nam.buivan@...").
+     */
     private static final Pattern YEARS_IN_CV = Pattern.compile(
-            "(\\d{1,2})(?:[.,](\\d))?\\s*\\+?\\s*(?:nam|years?|yrs?|year)\\b");
+            "(?<![\\d.,])(\\d{1,2})(?:[.,](\\d))?\\s*\\+?\\s*(?:nam|years?|yrs?|year)(?![a-z0-9@]|\\.[a-z0-9])");
+
+    /** Cụm từ cho thấy ứng viên CHƯA có (đang chờ cấp, chưa được cấp...). */
+    private static final List<String> NOT_YET = List.of(
+            "dang cho", "cho cap", "chua co", "chua duoc", "chua cap", "not yet", "pending", "awaiting");
+
+    /** Cụm từ cho thấy ứng viên đang trong quá trình (đang học, sắp thi...). */
+    private static final List<String> IN_PROGRESS = List.of(
+            "dang hoc", "dang theo hoc", "dang on", "sap thi", "se thi", "du kien", "in progress",
+            "currently studying", "studying for", "expected");
     private static final Pattern NUMBER = Pattern.compile("(\\d+(?:[.,]\\d+)?)");
     private static final int MAX_EVIDENCE_CHARS = 240;
 
@@ -122,7 +135,11 @@ public class CriteriaEvaluator {
             return evaluateKeywords(result, cvText);
         }
 
-        EducationLevel found = detectEducation(cvText);
+        // Bỏ qua các câu "đang học liên thông Đại học", "dự kiến tốt nghiệp": chưa có bằng đó
+        String completed = String.join("\n", TextNormalizer.splitSentences(cvText).stream()
+                .filter(s -> qualify(s) == CriterionStatus.MET)
+                .toList());
+        EducationLevel found = detectEducation(completed);
         result.setActual(found == null ? "" : found.label);
         if (found == null) {
             result.setStatus(CriterionStatus.UNKNOWN);
@@ -130,7 +147,7 @@ public class CriteriaEvaluator {
             return result;
         }
 
-        result.setEvidence(findEvidence(cvText, found.keywords));
+        result.setEvidence(findEvidence(completed, found.keywords));
         result.setStatus(found.rank >= requiredRank ? CriterionStatus.MET : CriterionStatus.NOT_MET);
         return result;
     }
@@ -225,17 +242,43 @@ public class CriteriaEvaluator {
     private CriterionResult evaluateKeywords(CriterionResult result, String cvText) {
         String normalizedCv = TextNormalizer.normalize(cvText);
         List<String> keywords = splitKeywords(result.getRequirement());
+        List<String> labels = splitAlternatives(result.getRequirement());
 
-        for (String keyword : keywords) {
+        // Nhắc tới nhưng ghi "đang chờ cấp" / "đang học" thì chưa tính là đạt; vẫn tìm tiếp
+        // phương án khác, có thể ứng viên đã có một chứng chỉ khác trong danh sách.
+        CriterionStatus weakest = null;
+        String weakActual = "";
+        String weakEvidence = "";
+        for (int k = 0; k < keywords.size(); k++) {
+            String keyword = keywords.get(k);
+            String label = k < labels.size() ? labels.get(k) : keyword;
             for (String variant : dictionary.expand(keyword)) {
                 if (variant.isBlank()) continue;
                 if (containsWord(normalizedCv, variant)) {
-                    result.setStatus(CriterionStatus.MET);
-                    result.setActual(keyword);
-                    result.setEvidence(findEvidence(cvText, List.of(variant)));
-                    return result;
+                    String evidence = findEvidence(cvText, List.of(variant));
+                    CriterionStatus status = qualify(evidence);
+                    if (status == CriterionStatus.MET) {
+                        result.setStatus(CriterionStatus.MET);
+                        result.setActual(label);
+                        result.setEvidence(evidence);
+                        return result;
+                    }
+                    if (weakest == null || status.value() > weakest.value()) {
+                        weakest = status;
+                        weakActual = label;
+                        weakEvidence = evidence;
+                    }
                 }
             }
+        }
+        if (weakest != null) {
+            result.setStatus(weakest);
+            result.setActual(weakActual + (weakest == CriterionStatus.PARTIAL ? " (đang học)" : " (chưa có)"));
+            result.setEvidence(weakEvidence);
+            result.setNote(weakest == CriterionStatus.PARTIAL
+                    ? "CV ghi đang trong quá trình học hoặc thi, chưa có chứng chỉ."
+                    : "CV ghi chưa có hoặc đang chờ cấp.");
+            return result;
         }
 
         result.setStatus(CriterionStatus.NOT_MET);
@@ -250,10 +293,27 @@ public class CriteriaEvaluator {
      * biến dấu phẩy thành khoảng trắng; sau đó mới chuẩn hoá từng phương án.
      */
     private List<String> splitKeywords(String requirement) {
+        return splitAlternatives(requirement).stream().map(TextNormalizer::normalize).toList();
+    }
+
+    /** Các phương án giữ nguyên cách viết của HR (có dấu), để hiển thị. */
+    private List<String> splitAlternatives(String requirement) {
         return Arrays.stream(requirement.split("(?i)[,;/]|\\bhoặc\\b|\\bhoac\\b|\\bor\\b"))
-                .map(TextNormalizer::normalize)
-                .filter(s -> !s.isBlank())
+                .map(String::trim)
+                .filter(s -> !TextNormalizer.normalize(s).isBlank())
                 .toList();
+    }
+
+    /** Câu trích có cho thấy ứng viên chưa có, hoặc đang trong quá trình lấy chứng chỉ không. */
+    private CriterionStatus qualify(String evidence) {
+        String normalized = TextNormalizer.normalize(evidence);
+        for (String marker : NOT_YET) {
+            if (containsWord(normalized, marker)) return CriterionStatus.NOT_MET;
+        }
+        for (String marker : IN_PROGRESS) {
+            if (containsWord(normalized, marker)) return CriterionStatus.PARTIAL;
+        }
+        return CriterionStatus.MET;
     }
 
     /* ================== Tiện ích ================== */

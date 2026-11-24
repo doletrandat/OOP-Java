@@ -38,7 +38,49 @@ class CriteriaMergerTest {
     }
 
     @Test
-    void aiCannotDowngradeRuleBasedMatch() {
+    void aiCorrectsSelfClaimedExperience() {
+        Criterion experience = new Criterion("Kinh nghiệm", CriterionType.EXPERIENCE, "3", 3);
+        List<CriterionResult> results = evaluator.evaluate(List.of(experience),
+                "3 năm kinh nghiệm lập trình Java (tính từ năm 2 đại học).\nThực tập sinh Java 06/2025 đến 09/2025.");
+        assertEquals(CriterionStatus.MET, results.get(0).getStatus());
+
+        merger.merge(results, List.of(verdict("Kinh nghiệm", "NOT_MET",
+                "khoảng 4 tháng thực tập", "Thực tập sinh Java 06/2025 đến 09/2025", false)));
+
+        CriterionResult merged = results.get(0);
+        assertEquals(CriterionStatus.NOT_MET, merged.getStatus());
+        assertEquals("AI", merged.getSource());
+        assertEquals("khoảng 4 tháng thực tập", merged.getActual());
+        // HR vẫn thấy quy tắc đã đọc được gì
+        assertTrue(merged.getNote().contains("Quy tắc từ khoá đọc được \"3 năm kinh nghiệm\""));
+    }
+
+    @Test
+    void aiCountsExperienceFromDateRanges() {
+        Criterion experience = new Criterion("Kinh nghiệm", CriterionType.EXPERIENCE, "3", 3);
+        List<CriterionResult> results = evaluator.evaluate(List.of(experience),
+                "Senior Backend Engineer 2021 đến nay. Trước đó 1 năm làm freelance.");
+        assertEquals(CriterionStatus.NOT_MET, results.get(0).getStatus());
+
+        merger.merge(results, List.of(verdict("Kinh nghiệm", "MET", "khoảng 6 năm", "2021 đến nay", true)));
+
+        assertEquals(CriterionStatus.MET, results.get(0).getStatus());
+        assertTrue(results.get(0).isInferred());
+    }
+
+    @Test
+    void agreementIsMarkedAsBoth() {
+        Criterion education = new Criterion("Trình độ", CriterionType.EDUCATION, "Đại học", 2);
+        List<CriterionResult> results = evaluator.evaluate(List.of(education), "Cử nhân Kinh tế, 2020.");
+
+        merger.merge(results, List.of(verdict("Trình độ", "MET", "Đại học", "Cử nhân Kinh tế", false)));
+
+        assertEquals(CriterionStatus.MET, results.get(0).getStatus());
+        assertEquals("BOTH", results.get(0).getSource());
+    }
+
+    @Test
+    void aiNeedsConcreteBasisToDowngrade() {
         Criterion education = new Criterion("Trình độ", CriterionType.EDUCATION, "Đại học", 2);
         List<CriterionResult> results = evaluator.evaluate(List.of(education),
                 "Tốt nghiệp Đại học Bách khoa Hà Nội.");

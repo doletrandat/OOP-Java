@@ -33,6 +33,18 @@ class RuleBasedKeywordMatcherTest {
     }
 
     @Test
+    void shortSkillsDoNotMatchVietnameseWordsWithoutDiacritics() {
+        JobPosting job = jobWith("SAP", "SEO", "Go");
+        Map<String, KeywordHit> none = matcher.match(job,
+                "Sắp xếp chứng từ cho kế toán. Vết sẹo nhỏ. Bàn gỗ.");
+        assertTrue(none.isEmpty(), none.keySet().toString());
+
+        Map<String, KeywordHit> hits = matcher.match(job,
+                "Chuyển đổi phần mềm sang SAP Business One. Tối ưu SEO cho blog. Viết dịch vụ bằng Go.");
+        assertEquals(3, hits.size());
+    }
+
+    @Test
     void matchesVietnameseSkillAgainstEnglishCv() {
         JobPosting job = jobWith("Làm việc nhóm");
         Map<String, KeywordHit> hits = matcher.match(job, "Strong teamwork and communication skills.");

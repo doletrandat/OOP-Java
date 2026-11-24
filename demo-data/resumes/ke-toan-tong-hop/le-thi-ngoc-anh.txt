@@ -1,0 +1,20 @@
+@style timeline
+@accent #7c3aed
+# Lê Thị Ngọc Anh
+> Chuyên viên nhân sự · ngocanh.le.hr@example.com · 0936 778 901
+
+## Giới thiệu
+3 năm làm tuyển dụng và tính lương tại công ty may mặc. Muốn chuyển sang mảng kế toán vì có hứng thú với số liệu.
+
+## Kinh nghiệm
+= Chuyên viên C&B · Công ty CP May Sông Hồng 2 | 2022 đến nay
+- Tính lương, bảo hiểm xã hội cho 1.200 công nhân mỗi tháng.
+- Quyết toán thuế TNCN cho người lao động cuối năm.
+- Tuyển dụng công nhân thời vụ vào mùa cao điểm.
+
+## Kỹ năng
+- Excel, phần mềm nhân sự Base HRM
+- Luật lao động, bảo hiểm xã hội
+
+## Học vấn
+= Đại học Lao động Xã hội · Quản trị nhân lực | 2017 đến 2021

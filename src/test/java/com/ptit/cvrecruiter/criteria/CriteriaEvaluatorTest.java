@@ -91,6 +91,47 @@ class CriteriaEvaluatorTest {
     }
 
     @Test
+    void phoneNumberAndEmailAreNotYearsOfExperience() {
+        Criterion experience = new Criterion("Kinh nghiệm", CriterionType.EXPERIENCE, "1", 2);
+        CriterionResult r = evaluator.evaluate(List.of(experience),
+                "Bùi Văn Nam\n0978 220 914 · nam.buivan.dd@example.com\nThực tập 6 tháng").get(0);
+        assertEquals(CriterionStatus.UNKNOWN, r.getStatus());
+
+        CriterionResult real = evaluator.evaluate(List.of(experience), "Có 4 năm kinh nghiệm. Hết.").get(0);
+        assertEquals(CriterionStatus.MET, real.getStatus());
+        assertEquals("4 năm kinh nghiệm", real.getActual());
+    }
+
+    @Test
+    void pendingCertificateIsNotMet() {
+        Criterion licence = new Criterion("Chứng chỉ hành nghề", CriterionType.CERTIFICATION,
+                "Chứng chỉ hành nghề, giấy phép hành nghề", 3);
+        CriterionResult r = evaluator.evaluate(List.of(licence),
+                "Đang chờ thời gian thực hành để được cấp chứng chỉ hành nghề").get(0);
+        assertEquals(CriterionStatus.NOT_MET, r.getStatus());
+        assertTrue(r.getNote().contains("chưa có"));
+        // Hiển thị đúng cách HR viết, còn dấu
+        assertEquals("Chứng chỉ hành nghề (chưa có)", r.getActual());
+
+        Criterion acca = new Criterion("Chứng chỉ", CriterionType.CERTIFICATION, "ACCA, CPA", 1);
+        CriterionResult studying = evaluator.evaluate(List.of(acca), "ACCA: đã đạt 6/13 môn, đang học tiếp").get(0);
+        assertEquals(CriterionStatus.PARTIAL, studying.getStatus());
+
+        CriterionResult held = evaluator.evaluate(List.of(acca),
+                "ACCA đang học tiếp.\nĐã có chứng chỉ CPA Việt Nam năm 2022.").get(0);
+        assertEquals(CriterionStatus.MET, held.getStatus());
+    }
+
+    @Test
+    void degreeStillInProgressDoesNotCount() {
+        Criterion education = new Criterion("Trình độ", CriterionType.EDUCATION, "Đại học", 2);
+        CriterionResult r = evaluator.evaluate(List.of(education),
+                "Cao đẳng Kinh tế Kỹ thuật Thương mại, 2019 đến 2022.\nĐang học liên thông Đại học ngành Kế toán.").get(0);
+        assertEquals(CriterionStatus.NOT_MET, r.getStatus());
+        assertEquals("Cao đẳng", r.getActual());
+    }
+
+    @Test
     void emptyRequirementIsUnknown() {
         CriterionResult result = evaluate(
                 new Criterion("Ghi chú", CriterionType.OTHER, "", 1), "Bất kỳ nội dung.");

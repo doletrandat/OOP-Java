@@ -63,7 +63,11 @@ public class ScoringService {
         Map<String, KeywordHit> hits = keywordMatcher.match(job, cvText);
         AiResult aiResult = aiAnalyzer.analyze(job, cvText);
 
-        double keywordScore = computeKeywordScore(job.getSkills(), hits);
+        // Điểm kỹ năng tính trên kết quả đã ghép từ khoá và AI: khớp = đủ điểm, chưa chắc = nửa.
+        // Không có AI thì đúng bằng điểm khớp từ khoá như trước.
+        List<SkillMatch> skillMatches = merge(job.getSkills(), hits,
+                aiResult.isSuccess() ? aiResult.getAnalysis() : null);
+        double keywordScore = computeSkillScore(skillMatches);
 
         // Đối chiếu tiêu chí bằng quy tắc trước, sau đó để AI bổ sung
         // những tiêu chí mà quy tắc không tìm thấy bằng chứng (ví dụ suy ra
@@ -94,13 +98,13 @@ public class ScoringService {
             report.setAiHighlights(ai.getHighlights());
             report.setAiConcerns(ai.getConcerns());
             report.setAiDimensions(ai.getDimensions());
-            report.setSkillMatches(merge(job.getSkills(), hits, ai));
+            report.setSkillMatches(skillMatches);
             report.setFinalScore(round1(clamp(ruleScore * (1 - aiWeight) + aiScore * aiWeight)));
         } else {
             report.setAiStatus(aiResult.getStatus());
             report.setAiError(aiResult.getError());
             report.setAiScore(-1);
-            report.setSkillMatches(merge(job.getSkills(), hits, null));
+            report.setSkillMatches(skillMatches);
             report.setFinalScore(round1(clamp(ruleScore)));
         }
         return report;
@@ -118,14 +122,15 @@ public class ScoringService {
         return total == 0 ? 0 : got / total * 100;
     }
 
-    /** Điểm từ khoá: tổng trọng số các kỹ năng tìm thấy / tổng trọng số, nhân 100. */
-    private double computeKeywordScore(List<Skill> skills, Map<String, KeywordHit> hits) {
+    /** Điểm kỹ năng: khớp = đủ trọng số, chưa chắc = nửa trọng số, chia tổng trọng số, nhân 100. */
+    private double computeSkillScore(List<SkillMatch> matches) {
         double total = 0;
         double got = 0;
-        for (Skill s : skills) {
-            double w = s.getWeight().getScore();
+        for (SkillMatch m : matches) {
+            double w = m.getWeight().getScore();
             total += w;
-            if (hits.containsKey(s.getName())) got += w;
+            if (m.getStatus() == MatchStatus.MATCHED) got += w;
+            else if (m.getStatus() == MatchStatus.UNCERTAIN) got += w * 0.5;
         }
         return total == 0 ? 0 : got / total * 100;
     }
@@ -165,14 +170,18 @@ public class ScoringService {
                                         sm.setSource(EvidenceSource.AI);
                                     }
                                 }
-                                case UNCERTAIN -> {
-                                    if (hit == null) {
+                                // Từ khoá có trong CV nhưng AI thấy chỉ được liệt kê, ghi "cơ bản",
+                                // hay dùng với nghĩa khác: chưa đủ để coi là khớp, HR cần hỏi lại.
+                                case UNCERTAIN, MISSING -> {
+                                    if (hit != null) {
+                                        sm.setStatus(MatchStatus.UNCERTAIN);
+                                        sm.setSource(EvidenceSource.BOTH);
+                                    } else if (v.toMatchStatus() == MatchStatus.UNCERTAIN) {
                                         sm.setStatus(MatchStatus.UNCERTAIN);
                                         sm.setSource(EvidenceSource.AI);
+                                    } else {
+                                        sm.setSource(EvidenceSource.NONE);
                                     }
-                                }
-                                default -> {
-                                    if (hit == null) sm.setSource(EvidenceSource.NONE);
                                 }
                             }
                         });

@@ -600,7 +600,7 @@ function Analysis({ report: r }: { report: MatchReport }) {
           </div>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-2 pb-1">
-          <MiniScore label="Từ khoá" value={r.keywordScore} />
+          <MiniScore label="Kỹ năng" value={r.keywordScore} />
           <MiniScore label="AI" value={r.aiStatus === "OK" ? r.aiScore : null} note={r.aiStatus !== "OK" ? AI_STATUS_LABEL[r.aiStatus] : undefined} />
           {criteria.length > 0 && <MiniScore label="Tiêu chí" value={r.criteriaScore >= 0 ? r.criteriaScore : null} />}
         </div>
@@ -712,7 +712,7 @@ function Analysis({ report: r }: { report: MatchReport }) {
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="mr-auto font-medium">{c.name}</span>
                     {c.source === "AI" && (
-                      <Badge variant={c.inferred ? "warning" : "info"}>{c.inferred ? "AI suy ra" : "AI tìm thấy"}</Badge>
+                      <Badge variant={c.inferred ? "warning" : "info"}>{c.inferred ? "AI suy ra" : "Theo AI"}</Badge>
                     )}
                     <CriterionStatusBadge status={c.status} />
                   </div>

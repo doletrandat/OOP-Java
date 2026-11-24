@@ -1,0 +1,25 @@
+@style classic
+# Trịnh Quang Huy
+> Senior .NET Developer
+> huy.trinhquang.net@example.com · 0904 662 317 · Hai Bà Trưng, Hà Nội
+
+## Tóm tắt
+6 năm phát triển backend bằng C# và .NET cho ngân hàng và công ty bảo hiểm. Từng xây dựng hệ thống thanh toán nội bộ theo kiến trúc microservices. Chưa làm Java nhưng sẵn sàng chuyển đổi.
+
+## Kinh nghiệm
+= Senior .NET Developer · Ngân hàng TMCP Đông Phương | 2021 đến nay
+- Phát triển microservices thanh toán bằng C#, ASP.NET Core 8 và Azure Service Bus.
+- Thiết kế REST API cho ứng dụng ngân hàng di động; tối ưu SQL trên SQL Server.
+- Triển khai bằng Docker và Azure Kubernetes Service, pipeline trên Azure DevOps.
+= .NET Developer · Công ty Bảo hiểm Hà Thành | 2019 đến 2021
+- Phát triển hệ thống quản lý hợp đồng bằng ASP.NET MVC và Entity Framework.
+
+## Kỹ năng
+- C#, ASP.NET Core, Entity Framework, LINQ
+- Microservices, REST API, Azure Service Bus, RabbitMQ
+- SQL Server, Redis
+- Docker, Kubernetes (AKS), Azure DevOps
+- Tiếng Anh: TOEIC 750
+
+## Học vấn
+= Học viện Công nghệ Bưu chính Viễn thông · Kỹ sư Công nghệ thông tin | 2014 đến 2019

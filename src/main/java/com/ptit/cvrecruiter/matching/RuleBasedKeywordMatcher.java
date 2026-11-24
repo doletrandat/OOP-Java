@@ -55,10 +55,14 @@ public class RuleBasedKeywordMatcher implements KeywordMatcher {
         String matchedVariant = null;
 
         for (String variant : variants) {
-            Pattern pattern = compilePattern(variant);
+            // Từ khoá ngắn như SAP, SEO, Go dễ trùng tiếng Việt sau khi bỏ dấu ("sắp", "sẹo", "gỗ"),
+            // nên so trên câu gốc còn dấu; từ khoá dài vẫn so trên văn bản không dấu như cũ.
+            boolean strict = isShortLatinWord(variant);
+            Pattern pattern = strict ? compileStrictPattern(variant) : compilePattern(variant);
             if (pattern == null) continue;
-            for (int i = 0; i < normalized.size(); i++) {
-                Matcher m = pattern.matcher(normalized.get(i));
+            List<String> haystack = strict ? sentences : normalized;
+            for (int i = 0; i < haystack.size(); i++) {
+                Matcher m = pattern.matcher(haystack.get(i));
                 int count = 0;
                 while (m.find()) {
                     count++;
@@ -96,6 +100,17 @@ public class RuleBasedKeywordMatcher implements KeywordMatcher {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** Một từ chỉ gồm chữ cái Latin không dấu, tối đa 4 ký tự (sap, seo, go, git, crm...). */
+    private boolean isShortLatinWord(String variant) {
+        return variant != null && variant.matches("[a-z]{1,4}");
+    }
+
+    /** So trên câu gốc, không phân biệt hoa thường, ranh giới từ tính cả chữ có dấu. */
+    private Pattern compileStrictPattern(String variant) {
+        return Pattern.compile("(?<![\\p{L}\\p{N}])" + Pattern.quote(variant) + "(?![\\p{L}\\p{N}])",
+                Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     }
 
     private boolean isWordChar(char c) {

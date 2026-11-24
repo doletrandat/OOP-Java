@@ -1,0 +1,126 @@
+[
+  {
+    "folder": "ke-toan-tong-hop",
+    "title": "Kế toán tổng hợp",
+    "department": "Phòng Tài chính Kế toán · Công ty CP Thực phẩm Hương Quê",
+    "description": "Hương Quê là nhà sản xuất bánh kẹo và đồ ăn vặt với 3 nhà máy và hơn 600 nhân viên. Chúng tôi cần một kế toán tổng hợp để quản lý sổ sách và lập báo cáo tài chính cho công ty mẹ và hai công ty con.\n\nCông việc:\n- Hạch toán, kiểm tra chứng từ và đối chiếu sổ cái hằng tháng.\n- Lập báo cáo tài chính quý và năm, báo cáo quản trị cho Ban Giám đốc.\n- Kê khai, quyết toán thuế GTGT, TNDN, TNCN.\n- Làm việc với kiểm toán độc lập và cơ quan thuế.\n- Theo dõi công nợ, tài sản cố định, giá thành sản phẩm.\n\nYêu cầu:\n- Tốt nghiệp Đại học chuyên ngành Kế toán, Kiểm toán hoặc Tài chính.\n- Ít nhất 2 năm làm kế toán tổng hợp, ưu tiên từng làm ở công ty sản xuất.\n- Dùng thành thạo Excel và phần mềm kế toán MISA hoặc SAP.\n- Có chứng chỉ Kế toán trưởng hoặc đang học ACCA, CPA là lợi thế.\n\nQuyền lợi: lương 15 đến 22 triệu, thưởng tháng 13, bảo hiểm sức khoẻ cho cả gia đình.",
+    "skills": [
+      { "name": "Kế toán tổng hợp", "weight": "REQUIRED" },
+      { "name": "Báo cáo tài chính", "weight": "REQUIRED" },
+      { "name": "Thuế", "weight": "REQUIRED" },
+      { "name": "Excel", "weight": "REQUIRED" },
+      { "name": "MISA", "weight": "PREFERRED" },
+      { "name": "SAP", "weight": "PREFERRED" },
+      { "name": "Giá thành", "weight": "PREFERRED" }
+    ],
+    "criteria": [
+      { "name": "Kinh nghiệm", "type": "EXPERIENCE", "requirement": "2", "weight": 3 },
+      { "name": "Trình độ", "type": "EDUCATION", "requirement": "Đại học", "weight": 2 },
+      { "name": "Chứng chỉ", "type": "CERTIFICATION", "requirement": "Kế toán trưởng, ACCA, CPA", "weight": 1 }
+    ]
+  },
+  {
+    "folder": "digital-marketing",
+    "title": "Digital Marketing Executive",
+    "department": "Marketing · Lumi Skincare",
+    "description": "Lumi Skincare is a Vietnamese skincare brand selling online and through 40 retail partners. We are looking for a Digital Marketing Executive to run paid and organic growth for our e-commerce store.\n\nWhat you will do:\n- Plan and run Google Ads and Facebook Ads campaigns with a monthly budget of around 400 million VND.\n- Own SEO for our website and blog: keyword research, on-page fixes, content briefs.\n- Track performance in Google Analytics 4 and report weekly on ROAS, CAC and conversion rate.\n- Work with the content team on campaigns for TikTok and Instagram.\n- Set up email marketing flows for new and returning customers.\n\nWhat we need:\n- At least 1 year running paid ads with a real budget.\n- Comfortable with numbers and spreadsheets.\n- English good enough to read platform documentation and talk to our regional agency (IELTS 6.0 or equivalent).\n- Experience with beauty or fashion brands is a plus.",
+    "skills": [
+      { "name": "Google Ads", "weight": "REQUIRED" },
+      { "name": "Facebook Ads", "weight": "REQUIRED" },
+      { "name": "SEO", "weight": "REQUIRED" },
+      { "name": "Google Analytics", "weight": "REQUIRED" },
+      { "name": "Content Marketing", "weight": "REQUIRED" },
+      { "name": "TikTok", "weight": "PREFERRED" },
+      { "name": "Email Marketing", "weight": "PREFERRED" },
+      { "name": "Canva", "weight": "PREFERRED" }
+    ],
+    "criteria": [
+      { "name": "Experience", "type": "EXPERIENCE", "requirement": "1", "weight": 2 },
+      { "name": "English", "type": "LANGUAGE", "requirement": "IELTS 6.0", "weight": 2 },
+      { "name": "Degree", "type": "EDUCATION", "requirement": "Đại học", "weight": 1 }
+    ]
+  },
+  {
+    "folder": "dieu-duong",
+    "title": "Điều dưỡng viên Khoa Nội",
+    "department": "Khoa Nội tổng hợp · Bệnh viện Đa khoa An Phúc",
+    "description": "Bệnh viện Đa khoa An Phúc (quy mô 300 giường) tuyển điều dưỡng viên cho Khoa Nội tổng hợp, làm việc theo ca.\n\nCông việc:\n- Chăm sóc người bệnh theo y lệnh: theo dõi dấu hiệu sinh tồn, tiêm truyền, phát thuốc.\n- Ghi chép hồ sơ bệnh án và phiếu chăm sóc trên hệ thống bệnh án điện tử.\n- Phối hợp sơ cứu, cấp cứu khi người bệnh chuyển nặng.\n- Hướng dẫn người bệnh và người nhà về chế độ ăn, dùng thuốc, phòng bệnh.\n\nYêu cầu:\n- Tốt nghiệp Cao đẳng Điều dưỡng trở lên.\n- Có chứng chỉ hành nghề hoặc giấy phép hành nghề còn hiệu lực.\n- Ít nhất 1 năm làm việc tại bệnh viện.\n- Có chứng chỉ hồi sức cấp cứu (BLS/ACLS) là lợi thế.\n- Giao tiếp tiếng Anh cơ bản để làm việc với người bệnh nước ngoài là lợi thế.",
+    "skills": [
+      { "name": "Chăm sóc người bệnh", "weight": "REQUIRED" },
+      { "name": "Tiêm truyền", "weight": "REQUIRED" },
+      { "name": "Hồ sơ bệnh án", "weight": "REQUIRED" },
+      { "name": "Sơ cứu", "weight": "REQUIRED" },
+      { "name": "Hồi sức cấp cứu", "weight": "PREFERRED" },
+      { "name": "Tiếng Anh", "weight": "PREFERRED" }
+    ],
+    "criteria": [
+      { "name": "Chứng chỉ hành nghề", "type": "CERTIFICATION", "requirement": "Chứng chỉ hành nghề, giấy phép hành nghề", "weight": 3 },
+      { "name": "Trình độ", "type": "EDUCATION", "requirement": "Cao đẳng", "weight": 2 },
+      { "name": "Kinh nghiệm", "type": "EXPERIENCE", "requirement": "1", "weight": 2 }
+    ]
+  },
+  {
+    "folder": "frontend-react",
+    "title": "Frontend Developer (React)",
+    "department": "Product Engineering · Vela Travel",
+    "description": "Vela Travel is an online booking platform for hotels and tours in Southeast Asia, with about 1.2 million monthly visitors. Our product team is rebuilding the booking flow and needs another frontend developer.\n\nYou will:\n- Build features in React and TypeScript, from design handoff to production.\n- Work on our shared component library and make it accessible.\n- Improve page speed and Core Web Vitals on search and checkout pages.\n- Write unit and end-to-end tests for the code you ship.\n- Review pull requests and pair with backend developers on API contracts.\n\nWe are looking for:\n- 2+ years building production apps with React.\n- Strong JavaScript, TypeScript, HTML and CSS.\n- Experience with Next.js, Tailwind CSS and testing tools (Jest, Playwright) is a plus.\n- English for daily standups with our team in Singapore (TOEIC 650 or similar).",
+    "skills": [
+      { "name": "React", "weight": "REQUIRED" },
+      { "name": "TypeScript", "weight": "REQUIRED" },
+      { "name": "JavaScript", "weight": "REQUIRED" },
+      { "name": "HTML", "weight": "REQUIRED" },
+      { "name": "CSS", "weight": "REQUIRED" },
+      { "name": "Next.js", "weight": "PREFERRED" },
+      { "name": "Tailwind CSS", "weight": "PREFERRED" },
+      { "name": "Testing", "weight": "PREFERRED" },
+      { "name": "Git", "weight": "PREFERRED" }
+    ],
+    "criteria": [
+      { "name": "Experience", "type": "EXPERIENCE", "requirement": "2", "weight": 3 },
+      { "name": "English", "type": "LANGUAGE", "requirement": "TOEIC 650", "weight": 1 }
+    ]
+  },
+  {
+    "folder": "kinh-doanh-logistics",
+    "title": "Nhân viên kinh doanh B2B (Logistics)",
+    "department": "Phòng Kinh doanh · Công ty TNHH Giao nhận Hải Âu",
+    "description": "Hải Âu là công ty giao nhận vận tải quốc tế, chuyên hàng xuất khẩu đường biển và đường hàng không từ cảng Hải Phòng và Cát Lái. Chúng tôi cần thêm nhân viên kinh doanh để tìm và chăm sóc khách hàng doanh nghiệp.\n\nCông việc:\n- Tìm kiếm khách hàng là doanh nghiệp xuất nhập khẩu, giới thiệu dịch vụ vận tải và thủ tục hải quan.\n- Báo giá, đàm phán giá cước và điều khoản hợp đồng.\n- Chăm sóc khách hàng hiện có, xử lý sự cố về lô hàng cùng bộ phận chứng từ.\n- Cập nhật thông tin khách hàng và cơ hội bán hàng trên CRM.\n- Đạt chỉ tiêu doanh số theo quý.\n\nYêu cầu:\n- Tốt nghiệp Cao đẳng trở lên, ưu tiên ngành Logistics, Ngoại thương, Kinh tế.\n- Ít nhất 1 năm kinh nghiệm bán hàng B2B, ưu tiên trong ngành logistics.\n- Hiểu quy trình xuất nhập khẩu và Incoterms.\n- Tiếng Anh giao tiếp và viết email (TOEIC 500 trở lên).\n\nThu nhập: lương cứng 10 triệu cộng hoa hồng không giới hạn.",
+    "skills": [
+      { "name": "Bán hàng B2B", "weight": "REQUIRED" },
+      { "name": "Đàm phán", "weight": "REQUIRED" },
+      { "name": "Chăm sóc khách hàng", "weight": "REQUIRED" },
+      { "name": "Logistics", "weight": "REQUIRED" },
+      { "name": "Xuất nhập khẩu", "weight": "PREFERRED" },
+      { "name": "CRM", "weight": "PREFERRED" },
+      { "name": "Incoterms", "weight": "PREFERRED" }
+    ],
+    "criteria": [
+      { "name": "Kinh nghiệm", "type": "EXPERIENCE", "requirement": "1", "weight": 2 },
+      { "name": "Trình độ", "type": "EDUCATION", "requirement": "Cao đẳng", "weight": 1 },
+      { "name": "Tiếng Anh", "type": "LANGUAGE", "requirement": "TOEIC 500", "weight": 2 }
+    ]
+  },
+  {
+    "folder": "java-backend-senior",
+    "title": "Kỹ sư Java Backend (Middle/Senior)",
+    "department": "Khối Công nghệ · Ngân hàng số TPay",
+    "description": "TPay là ví điện tử và ngân hàng số với 4 triệu người dùng, xử lý khoảng 2 triệu giao dịch mỗi ngày. Nhóm Core Payment cần thêm kỹ sư Java để xây dựng và vận hành các dịch vụ thanh toán.\n\nCông việc:\n- Thiết kế và phát triển microservices bằng Java 17+ và Spring Boot cho luồng nạp, rút, chuyển tiền.\n- Xây dựng REST API cho ứng dụng di động và đối tác; xử lý sự kiện bất đồng bộ qua Kafka.\n- Tối ưu truy vấn SQL trên PostgreSQL và dùng Redis làm bộ nhớ đệm.\n- Viết unit test và integration test, tham gia review code.\n- Trực sự cố theo lịch và cùng đội SRE theo dõi hệ thống trên Kubernetes.\n\nYêu cầu:\n- Ít nhất 3 năm làm Java backend, đã chạy hệ thống thật trên production.\n- Nắm vững Spring Boot, microservices, SQL và thiết kế REST API.\n- Đã dùng Kafka hoặc một message queue tương đương.\n- Biết Docker; có kinh nghiệm Kubernetes, CI/CD là lợi thế.\n- Tiếng Anh đọc tài liệu và viết tài liệu kỹ thuật (TOEIC 600 hoặc tương đương).\n- Tốt nghiệp Đại học ngành Công nghệ thông tin hoặc liên quan.\n\nThu nhập: 35 đến 60 triệu tuỳ năng lực, thưởng theo hiệu quả, 15 ngày phép.",
+    "skills": [
+      { "name": "Java", "weight": "REQUIRED" },
+      { "name": "Spring Boot", "weight": "REQUIRED" },
+      { "name": "Microservices", "weight": "REQUIRED" },
+      { "name": "SQL", "weight": "REQUIRED" },
+      { "name": "REST API", "weight": "REQUIRED" },
+      { "name": "Kafka", "weight": "REQUIRED" },
+      { "name": "Docker", "weight": "PREFERRED" },
+      { "name": "Kubernetes", "weight": "PREFERRED" },
+      { "name": "Redis", "weight": "PREFERRED" },
+      { "name": "CI/CD", "weight": "PREFERRED" }
+    ],
+    "criteria": [
+      { "name": "Kinh nghiệm", "type": "EXPERIENCE", "requirement": "3", "weight": 3 },
+      { "name": "Tiếng Anh", "type": "LANGUAGE", "requirement": "TOEIC 600", "weight": 2 },
+      { "name": "Trình độ", "type": "EDUCATION", "requirement": "Đại học", "weight": 1 }
+    ]
+  }
+]

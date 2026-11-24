@@ -3,6 +3,7 @@ package com.ptit.cvrecruiter.criteria;
 import com.ptit.cvrecruiter.ai.CriterionVerdict;
 import com.ptit.cvrecruiter.model.CriterionResult;
 import com.ptit.cvrecruiter.model.CriterionStatus;
+import com.ptit.cvrecruiter.model.CriterionType;
 import com.ptit.cvrecruiter.util.TextNormalizer;
 
 import java.util.List;
@@ -10,13 +11,20 @@ import java.util.List;
 /**
  * Kết hợp kết quả đối chiếu bằng quy tắc với nhận định của AI cho từng tiêu chí.
  *
- * <p>Nguyên tắc an toàn:
+ * <p>Quy tắc đọc chữ rất chính xác nhưng không hiểu ngữ cảnh: nó thấy "3 năm" trong
+ * "3 năm kinh nghiệm (tính từ năm 2 đại học)", thấy "chứng chỉ hành nghề" trong "đang chờ cấp
+ * chứng chỉ hành nghề", và không cộng được các mốc "2021 đến nay". AI đọc được ngữ cảnh đó.
+ * Vì vậy:
  * <ul>
- *   <li>Không bao giờ hạ một tiêu chí đã ĐẠT bằng bằng chứng rõ ràng trong CV.</li>
- *   <li>Chỉ nâng tiêu chí khi quy tắc KHÔNG tìm thấy bằng chứng nào và AI đưa ra
- *       căn cứ (trích dẫn hoặc suy luận có dữ kiện).</li>
- *   <li>Kết luận của AI luôn được đánh dấu nguồn "AI" và cờ suy luận để HR kiểm chứng.</li>
+ *   <li>Kinh nghiệm, trình độ, chứng chỉ, tiêu chí khác: khi AI có kết luận kèm căn cứ (giá trị
+ *       đọc được, câu trích hoặc giải thích), kết luận của AI được dùng, kể cả khi thấp hơn quy tắc.
+ *       Ghi chú nói rõ quy tắc đã đọc được gì để HR tự kiểm tra.</li>
+ *   <li>Ngoại ngữ: khi quy tắc đã đọc được điểm chứng chỉ (ví dụ "TOEIC 780") thì giữ kết quả so
+ *       sánh số của quy tắc. Khi quy tắc không thấy chứng chỉ, AI được nâng lên nếu có căn cứ
+ *       (ví dụ làm việc lâu năm ở nước nói tiếng Anh).</li>
+ *   <li>AI không có căn cứ hoặc trả về UNKNOWN: giữ kết quả quy tắc.</li>
  * </ul>
+ * Mọi kết luận lấy từ AI được đánh dấu nguồn "AI" (hoặc "BOTH" khi hai bên khớp nhau).
  */
 public class CriteriaMerger {
 
@@ -28,30 +36,45 @@ public class CriteriaMerger {
             if (target == null) continue;   // AI bịa tiêu chí không có trong JD → bỏ qua
 
             CriterionStatus aiStatus = verdict.toStatus();
-            if (target.getStatus() == CriterionStatus.MET) {
-                if (aiStatus == CriterionStatus.MET || aiStatus == CriterionStatus.PARTIAL) {
-                    target.setSource("BOTH");
+            CriterionStatus ruleStatus = target.getStatus();
+            boolean aiHasBasis = !verdict.getEvidence().isBlank()
+                    || !verdict.getActual().isBlank()
+                    || !verdict.getNote().isBlank();
+            if (aiStatus == CriterionStatus.UNKNOWN || !aiHasBasis) {
+                if (ruleStatus == CriterionStatus.UNKNOWN && !verdict.getNote().isBlank()) {
+                    target.setNote(prefix(verdict) + verdict.getNote());
                 }
                 continue;
             }
 
-            boolean ruleFoundNothing = target.getEvidence().isBlank();
-            boolean aiHasBasis = !verdict.getEvidence().isBlank()
-                    || verdict.isInferred()
-                    || !verdict.getActual().isBlank();
-
-            if ((aiStatus == CriterionStatus.MET || aiStatus == CriterionStatus.PARTIAL)
-                    && ruleFoundNothing && aiHasBasis) {
-                target.setStatus(aiStatus);
-                if (target.getActual().isBlank()) target.setActual(verdict.getActual());
-                if (target.getEvidence().isBlank()) target.setEvidence(verdict.getEvidence());
-                target.setSource("AI");
-                target.setInferred(verdict.isInferred());
-                target.setNote(buildNote(verdict, true));
-            } else if (target.getStatus() == CriterionStatus.UNKNOWN && !verdict.getNote().isBlank()) {
-                // Quy tắc chưa đủ dữ kiện: giữ UNKNOWN nhưng bổ sung nhận định của AI
-                target.setNote(buildNote(verdict, false));
+            if (aiStatus == ruleStatus) {
+                target.setSource("BOTH");
+                if (target.getNote().isBlank() && !verdict.getNote().isBlank()) {
+                    target.setNote(prefix(verdict) + verdict.getNote());
+                }
+                continue;
             }
+
+            boolean ruleReadCertificateScore = target.getType() == CriterionType.LANGUAGE
+                    && !target.getEvidence().isBlank();
+            if (ruleReadCertificateScore) {
+                continue;   // so sánh điểm TOEIC/IELTS của quy tắc là chính xác, giữ nguyên
+            }
+            boolean downgrade = aiStatus.value() < ruleStatus.value();
+            if (downgrade && target.getType() == CriterionType.LANGUAGE) {
+                continue;   // ngoại ngữ: AI chỉ được bổ sung, không hạ kết quả quy tắc
+            }
+            if (downgrade && verdict.getActual().isBlank() && verdict.getEvidence().isBlank()) {
+                continue;   // hạ kết quả phải nêu được giá trị thực tế hoặc câu trích, không chỉ nhận xét
+            }
+
+            String ruleSaw = target.getActual();
+            target.setStatus(aiStatus);
+            target.setSource("AI");
+            target.setInferred(verdict.isInferred());
+            if (!verdict.getActual().isBlank()) target.setActual(verdict.getActual());
+            if (!verdict.getEvidence().isBlank()) target.setEvidence(verdict.getEvidence());
+            target.setNote(buildNote(verdict, ruleStatus, ruleSaw));
         }
     }
 
@@ -69,11 +92,17 @@ public class CriteriaMerger {
         return null;
     }
 
-    private String buildNote(CriterionVerdict verdict, boolean upgraded) {
-        String note = verdict.getNote().isBlank()
-                ? (upgraded ? "AI bổ sung bằng chứng mà quy tắc chưa nhận ra." : "")
-                : verdict.getNote();
-        String prefix = verdict.isInferred() ? "AI suy luận: " : "AI: ";
-        return prefix + note;
+    private String prefix(CriterionVerdict verdict) {
+        return verdict.isInferred() ? "AI suy luận: " : "AI: ";
+    }
+
+    private String buildNote(CriterionVerdict verdict, CriterionStatus ruleStatus, String ruleSaw) {
+        String note = verdict.getNote().isBlank() ? "AI đọc lại ngữ cảnh trong CV." : verdict.getNote();
+        StringBuilder sb = new StringBuilder(prefix(verdict)).append(note);
+        if (ruleStatus != CriterionStatus.UNKNOWN && !ruleSaw.isBlank()) {
+            sb.append(" (Quy tắc từ khoá đọc được \"").append(ruleSaw).append("\" và kết luận ")
+              .append(ruleStatus.label().toLowerCase()).append(".)");
+        }
+        return sb.toString();
     }
 }

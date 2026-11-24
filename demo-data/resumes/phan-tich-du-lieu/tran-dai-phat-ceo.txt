@@ -1,0 +1,46 @@
+@style banner
+@accent #a16207
+@photo ../../photos/tran-dai-phat.jpg
+# Trần Đại Phát
+> Ứng tuyển vị trí: CHỦ TỊCH HĐQT KIÊM CEO (hoặc Chuyên viên Phân tích Dữ liệu nếu công ty chưa sẵn sàng)
+> Email: ceo.tuonglai@example.com · Điện thoại: 0999 999 999 (chỉ nghe máy sau 10h sáng)
+
+## Mục tiêu nghề nghiệp
+Trong 3 tháng đầu: thay thế CEO hiện tại. Trong 6 tháng: đưa công ty lên sàn NASDAQ. Trong 1 năm: mua lại đối thủ cạnh tranh và đổi tên công ty theo tên tôi. Tôi tin rằng mình sinh ra để lãnh đạo, chỉ là chưa có ai nhận ra điều đó.
+
+## Kinh nghiệm lãnh đạo
+= Trưởng nhóm · Nhóm Zalo "Gia đình là số 1" (47 thành viên) | 2019 đến nay
+- Điều phối thành công 12 buổi họp mặt Tết, tỷ lệ tham dự đạt 100% (do bị bắt buộc).
+- Ra quyết định chiến lược về việc ăn lẩu hay nướng, độ hài lòng của các bên liên quan đạt khoảng 60%.
+- Quản lý quỹ nhóm 2 triệu đồng, hiện còn 300 nghìn, đang làm rõ phần chênh lệch.
+= Đội trưởng · Team Liên Quân "Bất Bại Vô Đối" | 2021 đến 2023
+- Dẫn dắt đội 5 người leo từ hạng Đồng lên hạng Bạc trong 2 mùa giải.
+- Tối ưu chiến thuật bằng cách đổ lỗi cho đồng đội, giữ vững tinh thần cá nhân ở mức cao.
+= Nhà sáng lập kiêm CEO · Startup bán trà sữa online | 03/2024 đến 04/2024
+- Tự gọi vốn từ bố mẹ được 5 triệu đồng.
+- Đóng cửa sau 3 tuần vì "thị trường chưa sẵn sàng".
+
+## Kỹ năng
+- SQL (Siêu Quản Lý): quản lý mọi thứ, trừ bản thân
+- Power BI: hiểu rất rõ phần Power
+- Excel: biết mở file, biết tô màu ô, đang học cách tắt file không lưu
+- Python: đã xem 2 video trên YouTube, thấy cũng dễ
+- Synergy, disruption, blockchain, AI, metaverse: nói được trong mọi cuộc họp
+- Làm việc dưới áp lực: chưa thử, nhưng chắc là được
+
+## Thành tích
+- Nhận giải "Người dậy muộn nhất" của khu trọ 3 năm liền.
+- Có 12 nghìn người theo dõi TikTok (chủ yếu là video review mì gói).
+- Từng được một người lạ khen "trông anh giống sếp".
+
+## Yêu cầu đối với công ty
+- Lương khởi điểm: 500 triệu đồng mỗi tháng, có thể thương lượng lên.
+- Xe riêng có tài xế, phòng làm việc tầng cao nhất, ghế xoay bằng da.
+- Không họp trước 10h sáng, không làm thứ Hai.
+- Được duyệt ngân sách teambuilding ở Maldives mỗi quý.
+
+## Học vấn
+= Trường Đời · Chuyên ngành Tự tin | 2001 đến nay
+- Tốt nghiệp loại Xuất sắc theo đánh giá của bản thân.
+- Chứng chỉ "Làm giàu không khó" (khoá học online 99 nghìn đồng, chưa học xong).
+- Người tham khảo: mẹ tôi, "Con tôi giỏi lắm." (số điện thoại cung cấp khi được nhận)
