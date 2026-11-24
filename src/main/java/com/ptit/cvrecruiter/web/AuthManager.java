@@ -1,7 +1,5 @@
 package com.ptit.cvrecruiter.web;
 
-import com.ptit.cvrecruiter.config.AppConfig;
-
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -16,17 +14,15 @@ public class AuthManager {
     private final String adminPassword;
     private final Set<String> tokens = ConcurrentHashMap.newKeySet();
 
-    public AuthManager(AppConfig config) {
-        this.adminPassword = config.adminPassword;
+    public AuthManager(String adminPassword) {
+        this.adminPassword = adminPassword;
     }
 
     public Optional<String> login(String password) {
-        if (password != null && password.equals(adminPassword)) {
-            String token = UUID.randomUUID().toString();
-            tokens.add(token);
-            return Optional.of(token);
-        }
-        return Optional.empty();
+        if (password == null || !password.equals(adminPassword)) return Optional.empty();
+        String token = UUID.randomUUID().toString();
+        tokens.add(token);
+        return Optional.of(token);
     }
 
     public boolean isValid(String token) {
@@ -34,6 +30,6 @@ public class AuthManager {
     }
 
     public void logout(String token) {
-        tokens.remove(token);
+        if (token != null) tokens.remove(token);
     }
 }

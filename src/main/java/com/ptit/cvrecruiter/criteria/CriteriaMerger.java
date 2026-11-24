@@ -24,7 +24,7 @@ import java.util.List;
  *       (ví dụ làm việc lâu năm ở nước nói tiếng Anh).</li>
  *   <li>AI không có căn cứ hoặc trả về UNKNOWN: giữ kết quả quy tắc.</li>
  * </ul>
- * Mọi kết luận lấy từ AI được đánh dấu nguồn "AI" (hoặc "BOTH" khi hai bên khớp nhau).
+ * Mọi kết luận lấy từ AI được đánh dấu nguồn {@code AI} (hoặc {@code BOTH} khi hai bên khớp nhau).
  */
 public class CriteriaMerger {
 
@@ -42,16 +42,13 @@ public class CriteriaMerger {
                     || !verdict.getNote().isBlank();
             if (aiStatus == CriterionStatus.UNKNOWN || !aiHasBasis) {
                 if (ruleStatus == CriterionStatus.UNKNOWN && !verdict.getNote().isBlank()) {
-                    target.setNote(prefix(verdict) + verdict.getNote());
+                    target.annotate(prefix(verdict) + verdict.getNote());
                 }
                 continue;
             }
 
             if (aiStatus == ruleStatus) {
-                target.setSource("BOTH");
-                if (target.getNote().isBlank() && !verdict.getNote().isBlank()) {
-                    target.setNote(prefix(verdict) + verdict.getNote());
-                }
+                target.confirmByAi(verdict.getNote().isBlank() ? null : prefix(verdict) + verdict.getNote());
                 continue;
             }
 
@@ -68,13 +65,8 @@ public class CriteriaMerger {
                 continue;   // hạ kết quả phải nêu được giá trị thực tế hoặc câu trích, không chỉ nhận xét
             }
 
-            String ruleSaw = target.getActual();
-            target.setStatus(aiStatus);
-            target.setSource("AI");
-            target.setInferred(verdict.isInferred());
-            if (!verdict.getActual().isBlank()) target.setActual(verdict.getActual());
-            if (!verdict.getEvidence().isBlank()) target.setEvidence(verdict.getEvidence());
-            target.setNote(buildNote(verdict, ruleStatus, ruleSaw));
+            target.overrideByAi(aiStatus, verdict.getActual(), verdict.getEvidence(),
+                    buildNote(verdict, ruleStatus, target.getActual()), verdict.isInferred());
         }
     }
 

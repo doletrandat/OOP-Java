@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
-import { api, post, type AiStatus, type ApplicationSummary, type HrDecision, type Job } from "@/lib/api"
+import { aiApi, applicationsApi, jobsApi, type AiStatus, type ApplicationSummary, type HrDecision, type Job } from "@/lib/api"
 
 /**
  * Bộ nhớ dùng chung cho cả ứng dụng: danh sách vị trí và ứng viên của từng vị trí.
@@ -25,17 +25,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [jobs, setJobs] = useState<Job[] | null>(null)
   const [apps, setApps] = useState<Record<string, ApplicationSummary[] | undefined>>({})
+  // Bản mới nhất của apps cho các hàm callback (không gắn vào deps để callback giữ nguyên)
   const appsRef = useRef(apps)
-  appsRef.current = apps
+  useEffect(() => {
+    appsRef.current = apps
+  }, [apps])
 
   const loadApps = useCallback(async (jobId: string) => {
-    const list = await api<ApplicationSummary[]>(`/api/admin/jobs/${jobId}/applications`)
+    const list = await applicationsApi.listByJob(jobId)
     setApps((prev) => ({ ...prev, [jobId]: list }))
   }, [])
 
   const reloadJobs = useCallback(async () => {
     try {
-      const list = await api<Job[]>("/api/admin/jobs")
+      const list = await jobsApi.list()
       setJobs(list)
       // Tải ứng viên của mọi vị trí để thanh bên và trang tổng quan có số liệu theo trạng thái
       await Promise.all(list.map((j) => loadApps(j.id).catch(() => {})))
@@ -47,7 +50,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const reloadJob = useCallback(
     async (jobId: string) => {
       try {
-        const [job] = await Promise.all([api<Job>(`/api/admin/jobs/${jobId}`), loadApps(jobId)])
+        const [job] = await Promise.all([jobsApi.get(jobId), loadApps(jobId)])
         setJobs((prev) => {
           if (!prev) return prev
           const count = appsRef.current[jobId]?.length ?? job.applicationCount
@@ -83,7 +86,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try {
         await Promise.all(
           ids.map((id) =>
-            api(`/api/admin/applications/${id}/decision`, post({ decision, note: before.get(id)?.hrNote ?? "" }))
+            applicationsApi.decide(id, decision, before.get(id)?.hrNote ?? "")
           )
         )
       } catch (e) {
@@ -99,7 +102,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   useEffect(() => {
-    api<AiStatus>("/api/admin/ai-status")
+    aiApi.status()
       .then(setAiStatus)
       .catch(() => setAiStatus({ configured: false, aiWeight: 0 }))
     reloadJobs()
@@ -116,17 +119,4 @@ export function useStore() {
   const s = useContext(Ctx)
   if (!s) throw new Error("useStore must be used inside StoreProvider")
   return s
-}
-
-export function pipeline(list: ApplicationSummary[] | undefined) {
-  const l = list ?? []
-  const scored = l.filter((a) => a.finalScore != null)
-  return {
-    total: l.length,
-    NEW: l.filter((a) => a.hrDecision === "NEW" || !a.hrDecision).length,
-    SHORTLISTED: l.filter((a) => a.hrDecision === "SHORTLISTED").length,
-    REJECTED: l.filter((a) => a.hrDecision === "REJECTED").length,
-    top: scored.length ? Math.max(...scored.map((a) => a.finalScore!)) : null,
-    avg: scored.length ? scored.reduce((s, a) => s + a.finalScore!, 0) / scored.length : null,
-  }
 }

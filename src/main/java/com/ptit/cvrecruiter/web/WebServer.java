@@ -1,8 +1,5 @@
 package com.ptit.cvrecruiter.web;
 
-import com.ptit.cvrecruiter.config.AppConfig;
-import com.ptit.cvrecruiter.service.ApplicationService;
-import com.ptit.cvrecruiter.service.JobService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -11,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -34,18 +33,16 @@ public class WebServer {
             Map.entry(".pdf", "application/pdf"),
             Map.entry(".woff2", "font/woff2"));
 
-    private final AppConfig config;
+    private final int port;
     private final Router router = new Router();
-    private HttpServer server;
 
-    public WebServer(AppConfig config, JobService jobService,
-                     ApplicationService applicationService, AuthManager authManager) {
-        this.config = config;
-        new AdminController(jobService, applicationService, authManager, config).register(router);
+    public WebServer(int port, List<Controller> controllers) {
+        this.port = port;
+        controllers.forEach(c -> c.register(router));
     }
 
     public void start() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(config.port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newCachedThreadPool());
         server.createContext("/", this::handle);
         server.start();
@@ -101,8 +98,8 @@ public class WebServer {
         }
     }
 
-    private String extensionOf(String filePath) {
+    private static String extensionOf(String filePath) {
         int dot = filePath.lastIndexOf('.');
-        return dot < 0 ? "" : filePath.substring(dot).toLowerCase();
+        return dot < 0 ? "" : filePath.substring(dot).toLowerCase(Locale.ROOT);
     }
 }

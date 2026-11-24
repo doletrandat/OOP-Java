@@ -1,5 +1,7 @@
 package com.ptit.cvrecruiter.scoring;
 
+import com.ptit.cvrecruiter.config.ScoringWeights;
+import com.ptit.cvrecruiter.model.CriterionSource;
 import com.ptit.cvrecruiter.ai.AiAnalysis;
 import com.ptit.cvrecruiter.ai.AiAnalyzer;
 import com.ptit.cvrecruiter.ai.AiResult;
@@ -158,10 +160,10 @@ class ScoringServiceTest {
 
     @Test
     void criteriaAreEvaluatedAndBlendedIntoRuleScore() {
-        job.setCriteria(List.of(
+        job.replaceCriteria(List.of(
                 new Criterion("Kinh nghiệm", CriterionType.EXPERIENCE, "2", 2),
                 new Criterion("Trình độ", CriterionType.EDUCATION, "Đại học", 2)));
-        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), NO_AI, 0.4, 0.35);
+        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), NO_AI, new ScoringWeights(0.4, 0.35));
 
         MatchReport report = service.score(job,
                 "Tôi có 3 năm kinh nghiệm Java và SQL. Tốt nghiệp Đại học Bách khoa.");
@@ -175,10 +177,10 @@ class ScoringServiceTest {
 
     @Test
     void partialCriteriaLowerTheFinalScore() {
-        job.setCriteria(List.of(
+        job.replaceCriteria(List.of(
                 new Criterion("Kinh nghiệm", CriterionType.EXPERIENCE, "2", 3),
                 new Criterion("Chứng chỉ", CriterionType.CERTIFICATION, "AWS Certified", 1)));
-        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), NO_AI, 0.4, 0.35);
+        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), NO_AI, new ScoringWeights(0.4, 0.35));
 
         // Kinh nghiệm 1.5/2 năm → PARTIAL (0.5), chứng chỉ không có → NOT_MET (0)
         // criteriaScore = (3 * 0.5 + 1 * 0) / 4 * 100 = 37.5
@@ -193,7 +195,7 @@ class ScoringServiceTest {
 
     @Test
     void jobWithoutCriteriaKeepsKeywordOnlyBehaviour() {
-        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), NO_AI, 0.4, 0.35);
+        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), NO_AI, new ScoringWeights(0.4, 0.35));
 
         MatchReport report = service.score(job, "Tôi có 3 năm kinh nghiệm Java và SQL.");
 
@@ -204,7 +206,7 @@ class ScoringServiceTest {
 
     @Test
     void aiCanUpgradeCriterionWhenRuleFindsNoEvidence() {
-        job.setCriteria(List.of(
+        job.replaceCriteria(List.of(
                 new Criterion("Tiếng Anh", CriterionType.LANGUAGE, "TOEIC 600", 1)));
         AiAnalysis analysis = JsonUtil.gson().fromJson("""
                 {"aiScore": 70, "summary": "Phù hợp",
@@ -228,14 +230,14 @@ class ScoringServiceTest {
                 return AiResult.ok(analysis);
             }
         };
-        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), ai, 0.4, 0.35);
+        ScoringService service = new ScoringService(new RuleBasedKeywordMatcher(), ai, new ScoringWeights(0.4, 0.35));
 
         MatchReport report = service.score(job,
                 "Java SQL. Senior developer, New York, USA (2021-2025).");
 
         assertEquals(100.0, report.getCriteriaScore());
         assertEquals(1, report.countCriteriaMet());
-        assertEquals("AI", report.getCriteriaResults().get(0).getSource());
+        assertEquals(CriterionSource.AI, report.getCriteriaResults().get(0).getSource());
         assertTrue(report.getCriteriaResults().get(0).isInferred());
         assertEquals(1, report.getAiDimensions().size());
         // Điểm quy tắc 80*0.65 + 100*0.35 = 87; tổng 87*0.6 + 70*0.4 = 80.2

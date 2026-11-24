@@ -3,7 +3,11 @@ package com.ptit.cvrecruiter.model;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Một hồ sơ ứng tuyển: ứng viên nộp CV PDF cho một vị trí. */
+/**
+ * Một hồ sơ ứng tuyển: CV PDF của một ứng viên cho một vị trí.
+ * Các thay đổi đi qua phương thức nghiệp vụ (chấm điểm, ra quyết định, sửa liên hệ)
+ * thay vì setter, để hồ sơ luôn ở trạng thái hợp lệ.
+ */
 public class Application {
 
     private String id;
@@ -11,75 +15,93 @@ public class Application {
     private String candidateName;
     private String email;
     private String phone;
-    private String cvFileName;    // tên file gốc ứng viên upload
+    private String cvFileName;    // tên file gốc
     private String cvPath;        // đường dẫn file PDF đã lưu trên server
     private String cvText;        // văn bản trích xuất từ PDF
-    private String submittedAt = Instant.now().toString();
+    private String submittedAt;
     private MatchReport report;
-    // Quyết định của HR (tham khảo điểm AI nhưng con người tự quyết định)
+    // Quyết định của HR: AI không bao giờ tự đặt giá trị này
     private HrDecision hrDecision = HrDecision.NEW;
     private String hrNote = "";
     private String decidedAt = "";
 
-    public Application() {
-        // Gson cần constructor rỗng
+    private Application() {
+        // Gson
     }
 
-    public Application(String jobId, String candidateName, String email, String phone,
-                       String cvFileName, String cvPath, String cvText) {
+    public Application(String jobId, ContactInfo contact, String cvFileName, String cvPath, String cvText) {
         this.id = UUID.randomUUID().toString();
         this.jobId = jobId;
-        this.candidateName = candidateName;
-        this.email = email;
-        this.phone = phone;
+        applyContact(contact);
         this.cvFileName = cvFileName;
         this.cvPath = cvPath;
         this.cvText = cvText == null ? "" : cvText;
+        this.submittedAt = Instant.now().toString();
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getJobId() { return jobId; }
-    public void setJobId(String jobId) { this.jobId = jobId; }
-
-    public String getCandidateName() { return candidateName; }
-    public void setCandidateName(String candidateName) { this.candidateName = candidateName; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-
-    public String getCvFileName() { return cvFileName; }
-    public void setCvFileName(String cvFileName) { this.cvFileName = cvFileName; }
-
-    public String getCvPath() { return cvPath; }
-    public void setCvPath(String cvPath) { this.cvPath = cvPath; }
-
-    public String getCvText() { return cvText == null ? "" : cvText; }
-    public void setCvText(String cvText) { this.cvText = cvText; }
-
-    public String getSubmittedAt() { return submittedAt; }
-    public void setSubmittedAt(String submittedAt) { this.submittedAt = submittedAt; }
-
-    public MatchReport getReport() { return report; }
-    public void setReport(MatchReport report) { this.report = report; }
-
-    public HrDecision getHrDecision() { return hrDecision == null ? HrDecision.NEW : hrDecision; }
-    public void setHrDecision(HrDecision hrDecision) {
-        this.hrDecision = hrDecision == null ? HrDecision.NEW : hrDecision;
+    /** Gắn kết quả chấm điểm mới nhất. */
+    public void attachReport(MatchReport report) {
+        this.report = report;
     }
 
-    public String getHrNote() { return hrNote == null ? "" : hrNote; }
-    public void setHrNote(String hrNote) { this.hrNote = hrNote; }
+    /** HR ra quyết định (mời phỏng vấn, từ chối, hoặc đặt lại) kèm ghi chú nội bộ. */
+    public void decide(HrDecision decision, String note) {
+        this.hrDecision = decision == null ? HrDecision.NEW : decision;
+        this.hrNote = note == null ? "" : note.trim();
+        this.decidedAt = Instant.now().toString();
+    }
 
-    public String getDecidedAt() { return decidedAt == null ? "" : decidedAt; }
-    public void setDecidedAt(String decidedAt) { this.decidedAt = decidedAt; }
+    /** Sửa họ tên, email, số điện thoại; null nghĩa là giữ nguyên. */
+    public void updateContact(String name, String email, String phone) {
+        applyContact(contact().with(name, email, phone));
+    }
 
-    /** Ứng viên nộp CV cho vị trí nào (trao đổi với JobRepository để lấy thông tin hiển thị). */
+    public ContactInfo contact() {
+        return new ContactInfo(candidateName, email, phone);
+    }
+
     public boolean belongsToJob(String jobId) {
         return this.jobId != null && this.jobId.equals(jobId);
     }
+
+    public boolean hasCvFile() {
+        return cvPath != null && !cvPath.isBlank();
+    }
+
+    /** Điểm dùng để xếp hạng; hồ sơ chưa chấm xếp cuối. */
+    public double rankingScore() {
+        return report == null ? -1 : report.getFinalScore();
+    }
+
+    private void applyContact(ContactInfo contact) {
+        this.candidateName = contact.name();
+        this.email = contact.email();
+        this.phone = contact.phone();
+    }
+
+    public String getId() { return id; }
+
+    public String getJobId() { return jobId; }
+
+    public String getCandidateName() { return candidateName; }
+
+    public String getEmail() { return email == null ? "" : email; }
+
+    public String getPhone() { return phone == null ? "" : phone; }
+
+    public String getCvFileName() { return cvFileName; }
+
+    public String getCvPath() { return cvPath; }
+
+    public String getCvText() { return cvText == null ? "" : cvText; }
+
+    public String getSubmittedAt() { return submittedAt; }
+
+    public MatchReport getReport() { return report; }
+
+    public HrDecision getHrDecision() { return hrDecision == null ? HrDecision.NEW : hrDecision; }
+
+    public String getHrNote() { return hrNote == null ? "" : hrNote; }
+
+    public String getDecidedAt() { return decidedAt == null ? "" : decidedAt; }
 }

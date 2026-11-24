@@ -1,13 +1,15 @@
 package com.ptit.cvrecruiter.web;
 
 import com.ptit.cvrecruiter.util.JsonUtil;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonParseException;
+import com.ptit.cvrecruiter.common.ValidationException;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,27 +50,30 @@ public final class Http {
         }
     }
 
-    public static String readBody(HttpExchange ex) throws IOException {
-        return new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+    /** Gửi dữ liệu nhị phân (PDF, ảnh). */
+    public static void sendBytes(HttpExchange ex, String contentType, byte[] bytes) throws IOException {
+        ex.getResponseHeaders().set("Content-Type", contentType);
+        ex.sendResponseHeaders(200, bytes.length);
+        try (OutputStream os = ex.getResponseBody()) {
+            os.write(bytes);
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    public static Map<String, Object> readJsonMap(HttpExchange ex) throws IOException {
-        String raw = readBody(ex);
-        if (raw.isBlank()) return new LinkedHashMap<>();
-        Map<String, Object> map = JsonUtil.gson().fromJson(raw, Map.class);
-        return map == null ? new LinkedHashMap<>() : map;
-    }
-
+    /** Đọc body JSON thành đối tượng; body rỗng được coi như {@code {}}. */
     public static <T> T readJson(HttpExchange ex, Class<T> type) throws IOException {
-        return JsonUtil.gson().fromJson(readBody(ex), type);
+        String raw = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        try {
+            return JsonUtil.gson().fromJson(raw.isBlank() ? "{}" : raw, type);
+        } catch (JsonParseException e) {
+            throw new ValidationException("Du lieu JSON khong hop le.");
+        }
     }
 
     /** Đọc và phân tích multipart/form-data, tách trường text và file. */
     public static MultipartData readMultipart(HttpExchange ex, int maxBytes) throws IOException {
         String contentType = ex.getRequestHeaders().getFirst("Content-Type");
         if (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("multipart/form-data")) {
-            throw new IllegalArgumentException("Request phai la multipart/form-data.");
+            throw new ValidationException("Request phai la multipart/form-data.");
         }
         String boundary = null;
         for (String piece : contentType.split(";")) {
@@ -78,12 +83,12 @@ public final class Http {
             }
         }
         if (boundary == null || boundary.isBlank()) {
-            throw new IllegalArgumentException("Thieu boundary trong multipart request.");
+            throw new ValidationException("Thieu boundary trong multipart request.");
         }
 
         byte[] data = ex.getRequestBody().readNBytes(maxBytes + 1);
         if (data.length > maxBytes) {
-            throw new IllegalArgumentException("Du lieu upload qua lon.");
+            throw new ValidationException("Du lieu upload qua lon.");
         }
         byte[] delim = ("--" + boundary).getBytes(StandardCharsets.ISO_8859_1);
 
@@ -119,7 +124,7 @@ public final class Http {
     }
 
     private static List<byte[]> split(byte[] data, byte[] delim) {
-        List<byte[]> parts = new java.util.ArrayList<>();
+        List<byte[]> parts = new ArrayList<>();
         ByteArrayOutputStream current = new ByteArrayOutputStream();
         for (int i = 0; i < data.length; i++) {
             if (matchesAt(data, i, delim)) {

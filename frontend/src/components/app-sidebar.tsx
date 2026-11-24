@@ -3,13 +3,9 @@ import {
   ChevronsUpDownIcon,
   LayoutGridIcon,
   LogOutIcon,
-  MonitorIcon,
-  MoonIcon,
   PlusIcon,
   SparklesIcon,
-  SunIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -17,8 +13,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -41,7 +35,8 @@ import {
 } from "@/components/ui/sidebar"
 import type { Job } from "@/lib/api"
 import { paths, type Route } from "@/lib/router"
-import { pipeline, useStore } from "@/lib/store"
+import { pipeline } from "@/lib/pipeline"
+import { useStore } from "@/lib/store"
 
 export function BrandMark({ className = "size-8 text-xs" }: { className?: string }) {
   return (
@@ -190,7 +185,6 @@ export function AppSidebar({
 }
 
 function AccountMenu({ aiStatus, onLogout }: { aiStatus: ReturnType<typeof useStore>["aiStatus"]; onLogout: () => void }) {
-  const { theme, setTheme } = useTheme()
   const on = !!aiStatus?.configured
   const aiLine = on ? `${aiStatus!.displayName || aiStatus!.model}` : "AI đang tắt"
   return (
@@ -219,19 +213,6 @@ function AccountMenu({ aiStatus, onLogout }: { aiStatus: ReturnType<typeof useSt
               : "Hồ sơ chỉ được chấm theo từ khoá và tiêu chí. Đặt AI_API_KEY trong config.properties để bật."}
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs text-muted-foreground">Giao diện</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-          <DropdownMenuRadioItem value="light">
-            <SunIcon /> Sáng
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark">
-            <MoonIcon /> Tối
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="system">
-            <MonitorIcon /> Theo hệ thống
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onLogout}>
           <LogOutIcon /> Đăng xuất

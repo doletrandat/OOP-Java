@@ -6,7 +6,7 @@ xếp hạng ứng viên. Điểm tổng kết hợp **ba nguồn đánh giá đ
 
 1. **Khớp kỹ năng bằng từ khoá + từ điển đồng nghĩa Việt–Anh** (luôn chạy, không cần mạng).
 2. **Tiêu chí bổ sung do HR cấu hình** (kinh nghiệm, trình độ, ngoại ngữ, chứng chỉ...).
-3. **Phân tích ngữ nghĩa bằng AI** (tuỳ chọn; hỗ trợ Gemini, DeepSeek và mọi API tương thích OpenAI).
+3. **Phân tích ngữ nghĩa bằng AI** (tuỳ chọn, dùng DeepSeek).
 
 > 🔒 Ứng viên **không trực tiếp nộp CV** trên hệ thống này. Mọi thao tác đều diễn ra trong trang
 > quản trị `/admin` và yêu cầu đăng nhập.
@@ -38,10 +38,8 @@ Hệ thống chỉ có một giao diện duy nhất: **trang quản trị nội 
   Kèm ô xem lại toàn văn JD và bộ đếm “x/y kỹ năng khớp · a/b tiêu chí đạt”.
 - Xem file CV gốc (PDF) ngay trong ứng dụng: modal hiển thị **từng trang CV** dưới dạng ảnh
   (server kết xuất bằng PDFBox, xem được trên mọi trình duyệt kể cả khi trình duyệt chặn PDF nhúng),
-  kèm nút **Tải PDF gốc** và **Mở tab mới**, chấm lại một hồ sơ hoặc **chấm lại toàn bộ** sau khi sửa JD.
-- Phiên đăng nhập được lưu bằng **cookie `HttpOnly` (SameSite=Strict)** song song với token trong
-  `localStorage`, nên mở trực tiếp đường dẫn CV (dán URL, mở tab mới, bookmark) vẫn xác thực được —
-  không còn lỗi `401` như khi chỉ dựa vào header `X-Auth-Token`.
+  kèm nút **Tải PDF gốc**, chấm lại một hồ sơ hoặc **chấm lại toàn bộ** sau khi sửa JD.
+- Đăng nhập bằng mật khẩu admin; token lưu trong `localStorage` và gửi qua header `X-Auth-Token`.
 - Ghi nhận **quyết định của HR** (Chưa xử lý / Mời phỏng vấn / Từ chối) kèm ghi chú nội bộ.
 
 **Xử lý CV**
@@ -56,31 +54,39 @@ Hệ thống chỉ có một giao diện duy nhất: **trang quản trị nội 
 
 ```
 src/main/java/com/ptit/cvrecruiter/
-├── Main.java                  # Composition root: lắp ráp đối tượng, tiêm phụ thuộc thủ công
-├── config/AppConfig.java      # Cấu hình bất biến (env > config.properties > mặc định)
-├── model/                     # Thực thể & enum nghiệp vụ (JobPosting, Application, MatchReport...)
-├── repository/                # Lớp lưu trữ: JsonFileRepository<T> + repository chuyên biệt
-├── service/                   # Nghiệp vụ: JobService, ApplicationService
-├── parsing/                   # Interface CvTextExtractor + PdfBoxCvTextExtractor
-├── matching/                  # Interface KeywordMatcher + RuleBasedKeywordMatcher + SynonymDictionary
-├── criteria/                  # CriteriaEvaluator + CriteriaMerger (quy tắc + AI cho tiêu chí)
-├── scoring/                   # ScoringService: tổng hợp ba nguồn điểm
-├── ai/                        # AiAnalyzer (Strategy) + AiPrompts + GeminiAiAnalyzer
-│                              #   + OpenAiCompatibleAiAnalyzer (DeepSeek/Groq/OpenRouter/Ollama)
-└── web/                       # Web server nhúng JDK, Router, controller, AuthManager
+├── Main.java          # Composition root: tạo mọi đối tượng và tiêm phụ thuộc qua constructor
+├── config/            # Record bất biến: AppConfig, AiSettings, ScoringWeights, StorageSettings
+│                      #   + ConfigLoader (đọc config.properties, biến môi trường)
+├── common/            # NotFoundException (→ HTTP 404), ValidationException (→ HTTP 400)
+├── model/             # Thực thể có hành vi: JobPosting, Application, ContactInfo, SkillMatch,
+│                      #   CriterionResult, MatchReport (Builder)...
+├── repository/        # Interface Repository<T> + JsonFileRepository<T> + JobRepository, ApplicationRepository
+├── storage/           # Interface CvStorage + LocalCvStorage (lưu file PDF)
+├── parsing/           # CvTextExtractor (PDF → chữ), CvRenderer (PDF → ảnh trang)
+├── matching/          # KeywordMatcher + RuleBasedKeywordMatcher + SynonymDictionary
+├── criteria/          # CriterionRule (Strategy): ExperienceRule, EducationRule, LanguageRule, KeywordRule
+│                      #   + CriteriaEvaluator (chọn quy tắc theo loại) + CriteriaMerger (ghép với AI)
+├── scoring/           # ScoringService: ghép điểm kỹ năng, tiêu chí và AI
+├── ai/                # AiAnalyzer (interface) ← NoAiAnalyzer, DeepSeekAiAnalyzer; AiAnalyzerFactory
+├── service/           # JobService, ApplicationService
+└── web/               # WebServer, Router, Controller (interface) ← AuthController, JobController,
+                       #   ApplicationController, CvFileController, AiStatusController; dto/ (record)
 ```
 
 Các nguyên lý OOP được áp dụng:
 
-| Nguyên lý | Biểu hiện |
+| Nguyên lý | Biểu hiện trong code |
 |---|---|
-| Abstraction / Interface | `CvTextExtractor`, `KeywordMatcher`, `AiAnalyzer` |
-| Strategy pattern | Đổi bộ khớp từ khoá hoặc nhà cung cấp AI mà không sửa `ScoringService` |
-| Factory pattern | `AiAnalyzerFactory` chọn Gemini / OpenAI-compatible / tắt AI theo cấu hình |
-| Repository pattern | `JsonFileRepository<T>` tổng quát, ghi file nguyên tử (tmp + atomic move) |
-| Single responsibility | Model chỉ giữ dữ liệu; Service chỉ chứa nghiệp vụ; Controller chỉ xử lý HTTP |
-| Dependency injection | `Main` khởi tạo và truyền phụ thuộc qua constructor |
-| Encapsulation | Trạng thái `Application`, `MatchReport` chỉ đổi qua phương thức nghiệp vụ |
+| Đóng gói | Model không có setter. Muốn đổi trạng thái phải gọi phương thức nghiệp vụ: `JobPosting.edit/close`, `Application.decide`, `SkillMatch.applyAiVerdict`. Getter trả bản sao danh sách |
+| Trừu tượng | Interface `Repository<T>`, `CvStorage`, `CvTextExtractor`, `CvRenderer`, `KeywordMatcher`, `AiAnalyzer`, `CriterionRule`, `Controller` |
+| Kế thừa | Cây ngoại lệ: `CvExtractionException` → `ValidationException` → `IllegalArgumentException`; `NotFoundException`, `AuthException` kế thừa `RuntimeException` |
+| Đa hình | `CriteriaEvaluator` gọi `rule.evaluate(...)` mà không cần biết loại tiêu chí; `ScoringService` gọi `aiAnalyzer.analyze(...)` dù đó là DeepSeek hay `NoAiAnalyzer` |
+| Strategy | Mỗi loại tiêu chí là một `CriterionRule`; có AI hay không là hai `AiAnalyzer` khác nhau |
+| Null Object | `NoAiAnalyzer` khi chưa cấu hình AI, không cần kiểm tra null |
+| Factory | `AiAnalyzerFactory.create(settings)` |
+| Builder | `MatchReport.builder()...build()` |
+| Repository | `JsonFileRepository<T>` tổng quát, ghi file nguyên tử (tmp + atomic move) |
+| Dependency injection | `Main` tạo đối tượng và truyền vào constructor; lớp nghiệp vụ chỉ phụ thuộc interface |
 
 ---
 
@@ -110,14 +116,16 @@ Các nguyên lý OOP được áp dụng:
 
 - Trạng thái tiêu chí: `MET` (đạt), `PARTIAL` (một phần, ví dụ thiếu ≤ 0.5 năm kinh nghiệm),
   `NOT_MET` (chưa đạt), `UNKNOWN` (CV không nêu thông tin → không đoán).
-- Việc chấm tiêu chí chạy **rule-based** trước (không cần API key). Sau đó AI được xem lại
-  các tiêu chí mà quy tắc **không tìm thấy bằng chứng** và có thể nâng kết luận nếu có căn cứ,
-  ví dụ: ứng viên làm việc 4 năm tại Mỹ, CV viết bằng tiếng Anh → tiêu chí “Tiếng Anh” được
-  tính **Đạt** dù không có TOEIC/IELTS.
-  - Kết luận do AI bổ sung luôn gắn nhãn **“AI suy luận”** (hoặc “AI bổ sung”) và giữ câu
-    trích/dữ kiện gốc để HR kiểm chứng.
-  - AI **không thể hạ** tiêu chí mà quy tắc đã xác nhận đạt, và **không thể nâng** khi CV đã
-    nêu bằng chứng yếu hơn (ví dụ JD yêu cầu TOEIC 900 nhưng CV ghi TOEIC 650).
+- Việc chấm tiêu chí chạy **rule-based** trước (không cần API key), sau đó `CriteriaMerger`
+  ghép với nhận định của AI:
+  - AI trả "chưa rõ" hoặc không nêu căn cứ: giữ kết quả quy tắc.
+  - AI đồng ý với quy tắc: giữ nguyên, ghi nguồn là cả hai.
+  - Kinh nghiệm, trình độ, chứng chỉ, tiêu chí khác: AI có căn cứ thì kết luận của AI được dùng,
+    kể cả khi thấp hơn quy tắc (ví dụ "3 năm" nhưng thực ra tính từ năm 2 đại học). Muốn hạ
+    kết quả, AI phải nêu được giá trị thực tế hoặc câu trích. Ghi chú nói rõ quy tắc đã đọc được gì.
+  - Ngoại ngữ: quy tắc đã đọc được điểm chứng chỉ (TOEIC 650...) thì giữ phép so sánh số đó.
+    Quy tắc không thấy chứng chỉ thì AI được nâng nếu có căn cứ, ví dụ làm việc 4 năm tại Mỹ,
+    CV viết bằng tiếng Anh → "Tiếng Anh" **Đạt**, gắn nhãn **"AI suy ra"**.
 - **AI đánh giá đa chiều**, không chỉ đếm từ khoá trùng JD. Prompt yêu cầu chấm 6 nhóm:
   kỹ năng chuyên môn, kinh nghiệm & thâm niên, trình độ đào tạo, ngoại ngữ, chứng chỉ &
   bổ sung, yếu tố khác/rủi ro. Điểm từng nhóm được hiển thị trong hồ sơ.
@@ -140,7 +148,7 @@ Các nguyên lý OOP được áp dụng:
 ```powershell
 # 1. Tạo cấu hình (bỏ qua nếu đã có config.properties)
 Copy-Item config.properties.example config.properties
-#    rồi mở file và điền khoá AI (AI_API_KEY hoặc GEMINI_API_KEY)
+#    rồi mở file và điền khoá AI (AI_API_KEY)
 
 # 2. Build + chạy test
 .\mvnw.cmd package
@@ -165,14 +173,9 @@ Mọi biến đều có thể đặt trong `config.properties` hoặc biến mô
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|
 | `PORT` | `8080` | Cổng HTTP |
-| `AI_PROVIDER` | tự suy ra | `gemini` · `deepseek` · `openai` (mọi endpoint tương thích OpenAI) · `none` |
-| `AI_API_KEY` | *(trống)* | Khoá API của provider đang chọn |
-| `AI_BASE_URL` | theo provider | URL gốc endpoint OpenAI (DeepSeek: `https://api.deepseek.com/v1`) |
-| `AI_MODEL` | theo provider | Model dùng để phân tích |
-| `AI_FALLBACK_MODELS` | `gemini-3.6-flash` (Gemini) | Danh sách model dự phòng, cách nhau bằng dấu phẩy |
+| `AI_API_KEY` | *(trống)* | Khoá API DeepSeek. Để trống thì tắt AI, chỉ chấm bằng quy tắc |
+| `AI_MODEL` | `deepseek-chat` | Model DeepSeek dùng để phân tích |
 | `AI_TIMEOUT_SECONDS` | `60` | Thời gian chờ tối đa cho một lần gọi AI |
-| `GEMINI_API_KEY` | *(trống)* | Cách cấu hình cũ, vẫn được hỗ trợ |
-| `GEMINI_MODEL` | `gemini-3.5-flash` | Cách cấu hình cũ, vẫn được hỗ trợ |
 | `ADMIN_PASSWORD` | `admin123` | Mật khẩu trang quản trị |
 | `AI_WEIGHT` | `0.4` | Trọng số điểm AI trong điểm tổng (0–1) |
 | `CRITERIA_WEIGHT` | `0.35` | Tỉ lệ điểm tiêu chí bổ sung trong phần điểm quy tắc (chỉ áp dụng khi vị trí có tiêu chí) |
@@ -181,39 +184,6 @@ Mọi biến đều có thể đặt trong `config.properties` hoặc biến mô
 | `MAX_UPLOAD_MB` | `15` | Giới hạn dung lượng CV |
 
 `config.properties` chứa khoá bí mật và đã nằm trong `.gitignore` — **không commit file này**.
-
-### Đổi nhà cung cấp AI (Gemini ⇄ DeepSeek ⇄ OpenAI)
-
-Chỉ cần sửa `config.properties` rồi khởi động lại, không phải sửa code:
-
-```properties
-# DeepSeek — nhanh, chi phí thấp, tương thích OpenAI
-AI_PROVIDER=deepseek
-AI_API_KEY=sk-...
-AI_MODEL=deepseek-chat
-AI_BASE_URL=https://api.deepseek.com/v1
-
-# Hoặc quay lại Gemini
-# AI_PROVIDER=gemini
-# GEMINI_API_KEY=...
-# AI_MODEL=gemini-3.5-flash
-```
-
-Các endpoint tương thích OpenAI đã dùng được ngay:
-
-| Provider | `AI_BASE_URL` | `AI_MODEL` gợi ý |
-|---|---|---|
-| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
-| Groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` |
-| OpenRouter | `https://openrouter.ai/api/v1` | `deepseek/deepseek-chat` |
-| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
-| Ollama (nội bộ) | `http://localhost:11434/v1` | `qwen2.5:7b` (không cần API key) |
-
-> **Lưu ý:** DeepSeek không có model tên “flash”; model nhanh/rẻ của họ là `deepseek-chat`.
-> Nếu muốn tốc độ thấp hơn nữa có thể dùng Groq hoặc một model nhỏ qua OpenRouter —
-> chỉ cần đổi `AI_MODEL`.
-
-Giao diện hiển thị rõ provider + model đang dùng ở góc phải thanh điều hướng.
 
 ---
 
@@ -230,8 +200,8 @@ Thư mục `sample-cvs/` có ba CV PDF:
 Các bước demo:
 
 1. Vào `/admin` → đăng nhập → mở vị trí **Lập trình viên Java Backend**.
-2. Trong thẻ **Tải CV ứng viên lên**, nhập họ tên (email/điện thoại có thể để trống) và
-   tải lần lượt ba CV PDF ở trên. Hệ thống chấm điểm ngay sau mỗi lần tải.
+2. Bấm **Tải CV lên** và chọn ba CV PDF ở trên. Hệ thống tự đọc tên, email, số điện thoại
+   và chấm điểm từng CV.
 3. Quan sát bảng xếp hạng: điểm tổng, điểm từ khoá, điểm AI, số kỹ năng khớp, số tiêu chí đạt.
 4. Bấm vào một dòng để xem kỹ năng/tiêu chí khớp, câu trích dẫn bằng chứng và nhận xét AI.
 5. Sửa JD, kỹ năng hoặc **tiêu chí bổ sung** → bấm **Chấm lại tất cả** để cập nhật xếp hạng.
@@ -247,18 +217,21 @@ Toàn bộ API đều là nội bộ, yêu cầu header `X-Auth-Token` lấy t�
 | Method | Đường dẫn | Mô tả |
 |---|---|---|
 | `POST` | `/api/auth/login` | Đăng nhập HR, trả về token |
+| `POST` | `/api/auth/logout` | Đăng xuất (huỷ token) |
 | `GET` | `/api/admin/jobs` | Danh sách tất cả vị trí + số hồ sơ |
 | `GET` | `/api/admin/jobs/{id}` | Chi tiết một vị trí |
 | `POST` | `/api/admin/jobs` | Tạo vị trí |
 | `PUT` | `/api/admin/jobs/{id}` | Sửa vị trí / đổi trạng thái |
 | `DELETE` | `/api/admin/jobs/{id}` | Xoá vị trí, hồ sơ và file CV liên quan |
-| `POST` | `/api/admin/jobs/{id}/cv` | HR tải CV lên (multipart: `name`, `email`, `phone`, `file`) |
+| `POST` | `/api/admin/jobs/{id}/cv` | HR tải CV lên (multipart: `file`; `name`, `email`, `phone` không bắt buộc) |
 | `GET` | `/api/admin/jobs/{id}/applications` | Hồ sơ của vị trí, đã xếp theo điểm |
 | `POST` | `/api/admin/jobs/{id}/rescore-all` | Chấm lại toàn bộ hồ sơ của vị trí |
 | `GET` | `/api/admin/applications/{id}` | Chi tiết báo cáo chấm điểm |
 | `POST` | `/api/admin/applications/{id}/rescore` | Chấm lại một hồ sơ |
-| `POST` | `/api/admin/applications/{id}/decision` | Lưu quyết định của HR |
-| `GET` | `/api/admin/applications/{id}/cv` | Tải/xem CV PDF gốc (xác thực bằng header hoặc cookie) |
+| `POST` | `/api/admin/applications/{id}/decision` | Lưu quyết định và ghi chú của HR |
+| `PUT` | `/api/admin/applications/{id}` | Sửa họ tên, email, số điện thoại |
+| `DELETE` | `/api/admin/applications/{id}` | Xoá hồ sơ và file CV |
+| `GET` | `/api/admin/applications/{id}/cv` | Tải CV PDF gốc |
 | `GET` | `/api/admin/applications/{id}/cv/info` | Số trang, tên file, dung lượng CV |
 | `GET` | `/api/admin/applications/{id}/cv/pages/{page}` | Ảnh PNG của một trang CV (để xem trong ứng dụng) |
 | `GET` | `/api/admin/ai-status` | Trạng thái cấu hình AI và trọng số |
@@ -284,6 +257,6 @@ khởi động lại, không phải `LinkedTreeMap`).
 - Hệ thống **không tự động loại** ứng viên. Mọi quyết định đều do HR bấm chọn.
 - Điểm AI có thể sai lệch; giao diện luôn hiển thị cảnh báo và bằng chứng để HR kiểm chứng.
 - CV là dữ liệu cá nhân: chỉ lưu cục bộ trong `uploads/`, không gửi đi đâu ngoài nội dung văn bản
-  gửi tới nhà cung cấp AI mà HR chọn (Gemini/DeepSeek/OpenAI...) khi bật tiêu chí AI.
+  gửi tới DeepSeek khi bật AI.
 - Khi triển khai thật: đổi mật khẩu admin, dùng HTTPS, thêm phân quyền nhiều tài khoản HR,
   và có chính sách lưu trữ/xoá dữ liệu ứng viên.

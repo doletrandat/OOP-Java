@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   CheckIcon,
   LockIcon,
@@ -12,12 +12,13 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { CandidateTable, type Filter, type SortKey } from "@/components/candidate-table"
+import { CandidateTable } from "@/components/candidate-table"
+import type { Filter, SortKey } from "@/components/candidates/use-candidate-list"
 import { PipelineBar } from "@/components/overview-page"
 import { RequirementsView } from "@/components/requirements-view"
 import { ReviewView } from "@/components/review-view"
 import { JobStatusBadge } from "@/components/status"
-import { DropOverlay, UploadDialog, useUploadQueue } from "@/components/upload"
+import { UploadDialog } from "@/components/upload"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,10 +39,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { api, post, put, type Job } from "@/lib/api"
+import { jobsApi, type Job } from "@/lib/api"
 import { fmtScore } from "@/lib/format"
 import { navigate, paths, type Route } from "@/lib/router"
-import { pipeline, useStore } from "@/lib/store"
+import { pipeline } from "@/lib/pipeline"
+import { useStore } from "@/lib/store"
+import { useUploadQueue } from "@/lib/use-upload-queue"
 
 export function JobWorkspace({
   job,
@@ -64,8 +67,6 @@ export function JobWorkspace({
   const [reviewOrder, setReviewOrder] = useState<string[]>([])
 
   const [uploadOpen, setUploadOpen] = useState(false)
-  const [dragging, setDragging] = useState(false)
-  const dragDepth = useRef(0)
   const [confirm, setConfirm] = useState<"rescore" | "delete" | null>(null)
   const [rescoring, setRescoring] = useState(false)
 
@@ -90,28 +91,9 @@ export function JobWorkspace({
   )
   const order = reviewOrder.length ? reviewOrder : byScore
 
-  const onDragEnter = (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes("Files")) return
-    dragDepth.current++
-    setDragging(true)
-  }
-  const onDragLeave = () => {
-    dragDepth.current = Math.max(0, dragDepth.current - 1)
-    if (!dragDepth.current) setDragging(false)
-  }
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    dragDepth.current = 0
-    setDragging(false)
-    if (e.dataTransfer.files.length) {
-      queue.add(e.dataTransfer.files)
-      setUploadOpen(true)
-    }
-  }
-
   async function rescoreAll() {
     setRescoring(true)
-    const run = api<{ rescored: number }>(`/api/admin/jobs/${job.id}/rescore-all`, post()).then(async (r) => {
+    const run = jobsApi.rescoreAll(job.id).then(async (r) => {
       await reloadJob(job.id)
       return r
     })
@@ -126,7 +108,7 @@ export function JobWorkspace({
   async function toggleStatus() {
     const closing = job.status === "OPEN"
     try {
-      await api(`/api/admin/jobs/${job.id}`, put({ status: closing ? "CLOSED" : "OPEN" }))
+      await jobsApi.setOpen(job.id, !closing)
       toast.success(closing ? "Đã đóng vị trí. Bạn vẫn xem được các CV cũ." : "Đã mở lại vị trí.")
       reloadJob(job.id)
     } catch (e) {
@@ -136,7 +118,7 @@ export function JobWorkspace({
 
   async function deleteJob() {
     try {
-      await api(`/api/admin/jobs/${job.id}`, { method: "DELETE" })
+      await jobsApi.remove(job.id)
       toast.success(`Đã xoá "${job.title}".`)
       navigate(paths.home())
       reloadJobs()
@@ -160,15 +142,7 @@ export function JobWorkspace({
   const tab = route.tab === "requirements" ? "requirements" : "candidates"
 
   return (
-    <div
-      className="mx-auto w-full max-w-6xl p-4 sm:p-6"
-      onDragEnter={onDragEnter}
-      onDragLeave={onDragLeave}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
-    >
-      <DropOverlay show={dragging} />
-
+    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-balance">{job.title}</h1>

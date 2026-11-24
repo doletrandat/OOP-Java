@@ -1,5 +1,6 @@
 package com.ptit.cvrecruiter.criteria;
 
+import com.ptit.cvrecruiter.model.CriterionSource;
 import com.ptit.cvrecruiter.ai.CriterionVerdict;
 import com.ptit.cvrecruiter.model.Criterion;
 import com.ptit.cvrecruiter.model.CriterionResult;
@@ -31,7 +32,7 @@ class CriteriaMergerTest {
 
         CriterionResult merged = results.get(0);
         assertEquals(CriterionStatus.MET, merged.getStatus());
-        assertEquals("AI", merged.getSource());
+        assertEquals(CriterionSource.AI, merged.getSource());
         assertTrue(merged.isInferred());
         assertEquals("làm việc tại Mỹ 4 năm, CV viết bằng tiếng Anh", merged.getActual());
         assertTrue(merged.getNote().startsWith("AI suy luận:"));
@@ -49,7 +50,7 @@ class CriteriaMergerTest {
 
         CriterionResult merged = results.get(0);
         assertEquals(CriterionStatus.NOT_MET, merged.getStatus());
-        assertEquals("AI", merged.getSource());
+        assertEquals(CriterionSource.AI, merged.getSource());
         assertEquals("khoảng 4 tháng thực tập", merged.getActual());
         // HR vẫn thấy quy tắc đã đọc được gì
         assertTrue(merged.getNote().contains("Quy tắc từ khoá đọc được \"3 năm kinh nghiệm\""));
@@ -76,7 +77,7 @@ class CriteriaMergerTest {
         merger.merge(results, List.of(verdict("Trình độ", "MET", "Đại học", "Cử nhân Kinh tế", false)));
 
         assertEquals(CriterionStatus.MET, results.get(0).getStatus());
-        assertEquals("BOTH", results.get(0).getSource());
+        assertEquals(CriterionSource.BOTH, results.get(0).getSource());
     }
 
     @Test
@@ -89,7 +90,7 @@ class CriteriaMergerTest {
         merger.merge(results, List.of(verdict("Trình độ", "NOT_MET", "", "", false)));
 
         assertEquals(CriterionStatus.MET, results.get(0).getStatus());
-        assertEquals("RULE", results.get(0).getSource());
+        assertEquals(CriterionSource.RULE, results.get(0).getSource());
     }
 
     @Test

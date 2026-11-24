@@ -1,21 +1,26 @@
 package com.ptit.cvrecruiter.model;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Báo cáo chấm điểm một CV so với một JD.
- * Điểm quy tắc = kết hợp điểm kỹ năng và điểm tiêu chí bổ sung (nếu có).
- * Điểm cuối = (1 - aiWeight) * điểm quy tắc + aiWeight * điểm AI.
+ * Báo cáo chấm điểm một CV so với một vị trí. Được tạo một lần qua {@link Builder}
+ * rồi không đổi nữa (chấm lại thì tạo báo cáo mới).
+ *
+ * <p>Điểm quy tắc = ghép điểm kỹ năng với điểm tiêu chí bổ sung (nếu có).
+ * Điểm tổng = (1 - trọng số AI) × điểm quy tắc + trọng số AI × điểm AI.
  */
 public class MatchReport {
 
-    private double keywordScore;      // 0..100
-    private double criteriaScore = -1; // 0..100, -1 nếu job không có tiêu chí bổ sung
-    private double aiScore = -1;      // 0..100, -1 nếu không có AI
-    private double finalScore;        // 0..100
+    public static final double NOT_AVAILABLE = -1;
+
+    private double keywordScore;                 // 0..100, điểm kỹ năng
+    private double criteriaScore = NOT_AVAILABLE; // 0..100, -1 nếu vị trí không có tiêu chí
+    private double aiScore = NOT_AVAILABLE;       // 0..100, -1 nếu không có AI
+    private double finalScore;                    // 0..100
     private AiStatus aiStatus = AiStatus.NOT_CONFIGURED;
-    private String aiError = "";      // thông báo lỗi nếu aiStatus = ERROR
+    private String aiError = "";
     private String aiSummary = "";
     private List<String> aiHighlights = new ArrayList<>();
     private List<String> aiConcerns = new ArrayList<>();
@@ -24,66 +29,102 @@ public class MatchReport {
     private List<ScoreDimension> aiDimensions = new ArrayList<>();
     private String scoredAt = "";
 
-    public MatchReport() {
-        // Gson cần constructor rỗng
+    private MatchReport() {
+        // Gson và Builder
     }
 
-    public double getKeywordScore() { return keywordScore; }
-    public void setKeywordScore(double keywordScore) { this.keywordScore = keywordScore; }
-
-    public double getCriteriaScore() { return criteriaScore; }
-    public void setCriteriaScore(double criteriaScore) { this.criteriaScore = criteriaScore; }
-
-    public List<CriterionResult> getCriteriaResults() {
-        return criteriaResults == null ? new ArrayList<>() : criteriaResults;
+    public static Builder builder() {
+        return new Builder();
     }
-    public void setCriteriaResults(List<CriterionResult> criteriaResults) {
-        this.criteriaResults = criteriaResults;
-    }
-
-    /** Điểm từng nhóm tiêu chí do AI đánh giá (kỹ năng, kinh nghiệm, trình độ, ngoại ngữ...). */
-    public List<ScoreDimension> getAiDimensions() {
-        return aiDimensions == null ? new ArrayList<>() : aiDimensions;
-    }
-    public void setAiDimensions(List<ScoreDimension> aiDimensions) {
-        this.aiDimensions = aiDimensions;
-    }
-
-    /** Số tiêu chí bổ sung đạt yêu cầu (chỉ tính trạng thái MET). */
-    public long countCriteriaMet() {
-        return getCriteriaResults().stream()
-                .filter(c -> c.getStatus() == CriterionStatus.MET)
-                .count();
-    }
-
-    public double getAiScore() { return aiScore; }
-    public void setAiScore(double aiScore) { this.aiScore = aiScore; }
-
-    public double getFinalScore() { return finalScore; }
-    public void setFinalScore(double finalScore) { this.finalScore = finalScore; }
-
-    public AiStatus getAiStatus() { return aiStatus == null ? AiStatus.NOT_CONFIGURED : aiStatus; }
-    public void setAiStatus(AiStatus aiStatus) { this.aiStatus = aiStatus; }
-
-    public String getAiError() { return aiError == null ? "" : aiError; }
-    public void setAiError(String aiError) { this.aiError = aiError; }
-
-    public String getAiSummary() { return aiSummary == null ? "" : aiSummary; }
-    public void setAiSummary(String aiSummary) { this.aiSummary = aiSummary; }
-
-    public List<String> getAiHighlights() { return aiHighlights == null ? new ArrayList<>() : aiHighlights; }
-    public void setAiHighlights(List<String> aiHighlights) { this.aiHighlights = aiHighlights; }
-
-    public List<String> getAiConcerns() { return aiConcerns == null ? new ArrayList<>() : aiConcerns; }
-    public void setAiConcerns(List<String> aiConcerns) { this.aiConcerns = aiConcerns; }
-
-    public List<SkillMatch> getSkillMatches() { return skillMatches == null ? new ArrayList<>() : skillMatches; }
-    public void setSkillMatches(List<SkillMatch> skillMatches) { this.skillMatches = skillMatches; }
-
-    public String getScoredAt() { return scoredAt == null ? "" : scoredAt; }
-    public void setScoredAt(String scoredAt) { this.scoredAt = scoredAt; }
 
     public long countByStatus(MatchStatus status) {
         return getSkillMatches().stream().filter(s -> s.getStatus() == status).count();
+    }
+
+    /** Số tiêu chí bổ sung đạt yêu cầu (chỉ tính MET). */
+    public long countCriteriaMet() {
+        return getCriteriaResults().stream().filter(c -> c.getStatus() == CriterionStatus.MET).count();
+    }
+
+    public double getKeywordScore() { return keywordScore; }
+
+    public double getCriteriaScore() { return criteriaScore; }
+
+    public double getAiScore() { return aiScore; }
+
+    public double getFinalScore() { return finalScore; }
+
+    public AiStatus getAiStatus() { return aiStatus == null ? AiStatus.NOT_CONFIGURED : aiStatus; }
+
+    public String getAiError() { return aiError == null ? "" : aiError; }
+
+    public String getAiSummary() { return aiSummary == null ? "" : aiSummary; }
+
+    public List<String> getAiHighlights() { return aiHighlights == null ? List.of() : List.copyOf(aiHighlights); }
+
+    public List<String> getAiConcerns() { return aiConcerns == null ? List.of() : List.copyOf(aiConcerns); }
+
+    public List<SkillMatch> getSkillMatches() { return skillMatches == null ? List.of() : List.copyOf(skillMatches); }
+
+    public List<CriterionResult> getCriteriaResults() {
+        return criteriaResults == null ? List.of() : List.copyOf(criteriaResults);
+    }
+
+    /** Điểm từng nhóm tiêu chí do AI đánh giá. */
+    public List<ScoreDimension> getAiDimensions() { return aiDimensions == null ? List.of() : List.copyOf(aiDimensions); }
+
+    public String getScoredAt() { return scoredAt == null ? "" : scoredAt; }
+
+    /** Dựng báo cáo từng phần; điểm được làm tròn một chữ số thập phân và giới hạn trong 0..100. */
+    public static final class Builder {
+
+        private final MatchReport report = new MatchReport();
+
+        private Builder() {
+            report.scoredAt = Instant.now().toString();
+        }
+
+        public Builder skills(List<SkillMatch> matches, double score) {
+            report.skillMatches = new ArrayList<>(matches);
+            report.keywordScore = round(score);
+            return this;
+        }
+
+        public Builder criteria(List<CriterionResult> results, double score) {
+            report.criteriaResults = new ArrayList<>(results);
+            report.criteriaScore = score < 0 ? NOT_AVAILABLE : round(score);
+            return this;
+        }
+
+        public Builder ai(double score, String summary, List<String> highlights, List<String> concerns,
+                          List<ScoreDimension> dimensions) {
+            report.aiStatus = AiStatus.OK;
+            report.aiScore = round(score);
+            report.aiSummary = summary;
+            report.aiHighlights = new ArrayList<>(highlights);
+            report.aiConcerns = new ArrayList<>(concerns);
+            report.aiDimensions = new ArrayList<>(dimensions);
+            return this;
+        }
+
+        public Builder aiUnavailable(AiStatus status, String error) {
+            report.aiStatus = status;
+            report.aiError = error == null ? "" : error;
+            report.aiScore = NOT_AVAILABLE;
+            return this;
+        }
+
+        public Builder finalScore(double score) {
+            report.finalScore = round(score);
+            return this;
+        }
+
+        public MatchReport build() {
+            return report;
+        }
+
+        private static double round(double v) {
+            return Math.round(Math.max(0, Math.min(100, v)) * 10.0) / 10.0;
+        }
     }
 }

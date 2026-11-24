@@ -2,7 +2,7 @@ package com.ptit.cvrecruiter.model;
 
 /**
  * Điểm của một nhóm tiêu chí do AI đánh giá (kỹ năng, kinh nghiệm, trình độ,
- * ngoại ngữ, chứng chỉ, yếu tố khác) kèm nhận xét ngắn.
+ * ngoại ngữ, chứng chỉ) kèm nhận xét ngắn. Bất biến.
  */
 public class ScoreDimension {
 
@@ -10,22 +10,19 @@ public class ScoreDimension {
     private double score;     // 0..100
     private String comment = "";
 
-    public ScoreDimension() {
-        // Gson cần constructor rỗng
+    private ScoreDimension() {
+        // Gson
     }
 
     public ScoreDimension(String name, double score, String comment) {
         this.name = name;
-        setScore(score);
+        this.score = Math.max(0, Math.min(100, score));
         this.comment = comment;
     }
 
     public String getName() { return name == null ? "" : name; }
-    public void setName(String name) { this.name = name; }
 
-    public double getScore() { return score; }
-    public void setScore(double score) { this.score = Math.max(0, Math.min(100, score)); }
+    public double getScore() { return Math.max(0, Math.min(100, score)); }
 
     public String getComment() { return comment == null ? "" : comment; }
-    public void setComment(String comment) { this.comment = comment; }
 }

@@ -1,211 +1,140 @@
 package com.ptit.cvrecruiter.service;
 
-import com.ptit.cvrecruiter.util.ContactExtractor;
-import com.ptit.cvrecruiter.config.AppConfig;
+import com.ptit.cvrecruiter.common.NotFoundException;
+import com.ptit.cvrecruiter.common.ValidationException;
 import com.ptit.cvrecruiter.model.Application;
+import com.ptit.cvrecruiter.model.ContactInfo;
+import com.ptit.cvrecruiter.model.HrDecision;
 import com.ptit.cvrecruiter.model.JobPosting;
-import com.ptit.cvrecruiter.model.MatchReport;
-import com.ptit.cvrecruiter.parsing.CvExtractionException;
 import com.ptit.cvrecruiter.parsing.CvTextExtractor;
 import com.ptit.cvrecruiter.repository.ApplicationRepository;
 import com.ptit.cvrecruiter.repository.JobRepository;
 import com.ptit.cvrecruiter.scoring.ScoringService;
+import com.ptit.cvrecruiter.storage.CvStorage;
+import com.ptit.cvrecruiter.util.ContactExtractor;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
- * Nghiệp vụ xử lý hồ sơ ứng tuyển do HR tải lên:
- * nhận file PDF -> trích xuất văn bản -> chấm điểm -> lưu lại.
+ * Nghiệp vụ hồ sơ ứng tuyển: nhận file PDF, trích xuất văn bản, chấm điểm, lưu lại;
+ * ghi nhận quyết định của HR.
  */
 public class ApplicationService {
 
-    private static final Pattern EMAIL = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[\\w.]+$");
-
     private final ApplicationRepository repository;
-    private final JobRepository jobRepository;
+    private final JobRepository jobs;
     private final CvTextExtractor textExtractor;
-    private final ScoringService scoringService;
-    private final AppConfig config;
+    private final ScoringService scoring;
+    private final CvStorage storage;
+    private final int maxUploadBytes;
 
-    public ApplicationService(ApplicationRepository repository, JobRepository jobRepository,
-                              CvTextExtractor textExtractor, ScoringService scoringService,
-                              AppConfig config) {
+    public ApplicationService(ApplicationRepository repository, JobRepository jobs, CvTextExtractor textExtractor,
+                              ScoringService scoring, CvStorage storage, int maxUploadBytes) {
         this.repository = repository;
-        this.jobRepository = jobRepository;
+        this.jobs = jobs;
         this.textExtractor = textExtractor;
-        this.scoringService = scoringService;
-        this.config = config;
+        this.scoring = scoring;
+        this.storage = storage;
+        this.maxUploadBytes = maxUploadBytes;
     }
 
-    /**
-     * HR tải CV PDF lên cho một vị trí: trích xuất văn bản, chấm điểm và lưu hồ sơ.
-     */
-    public Application addApplication(String jobId, String name, String email, String phone,
-                                      String cvFileName, byte[] cvBytes) {
-        JobPosting job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Vi tri tuyen dung khong ton tai."));
-        String cleanEmail = email == null ? "" : email.trim();
-        if (!cleanEmail.isEmpty() && !EMAIL.matcher(cleanEmail).matches()) {
-            throw new IllegalArgumentException("Email khong hop le.");
-        }
-        if (cvFileName == null || cvBytes == null || cvBytes.length == 0) {
-            throw new IllegalArgumentException("Vui long chon file CV (PDF).");
-        }
-        if (cvBytes.length > config.maxUploadBytes) {
-            throw new IllegalArgumentException("File CV vuot qua gioi han cho phep.");
-        }
+    /** HR tải CV lên cho một vị trí: trích xuất văn bản, đoán thông tin liên hệ, chấm điểm và lưu. */
+    public Application submit(String jobId, CvUpload upload) {
+        JobPosting job = job(jobId);
+        ValidationException.require(!upload.isEmpty(), "Vui long chon file CV (PDF).");
+        ValidationException.require(upload.bytes().length <= maxUploadBytes, "File CV vuot qua gioi han cho phep.");
+        ValidationException.require(upload.email() == null || upload.email().isBlank()
+                || ContactInfo.isValidEmail(upload.email()), "Email khong hop le.");
 
-        String cvText;
+        String cvText = textExtractor.extract(upload.fileName(), upload.bytes());
+        ContactInfo contact = detectContact(upload, cvText);
+
+        Path saved = storage.store(jobId, upload.bytes());
         try {
-            cvText = textExtractor.extract(cvFileName, cvBytes);
-        } catch (CvExtractionException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-
-        // HR có thể bỏ trống thông tin liên hệ: hệ thống tự đoán từ nội dung CV
-        String cleanName = name == null || name.isBlank()
-                ? ContactExtractor.name(cvText, cvFileName) : name.trim();
-        if (cleanEmail.isEmpty()) {
-            String found = ContactExtractor.email(cvText);
-            if (EMAIL.matcher(found).matches()) cleanEmail = found;
-        }
-        String cleanPhone = phone == null || phone.isBlank() ? ContactExtractor.phone(cvText) : phone.trim();
-
-        Path saved = saveCvFile(jobId, cvBytes);
-        Application application = new Application(jobId, cleanName, cleanEmail,
-                cleanPhone, cvFileName, saved.toString(), cvText);
-
-        try {
-            MatchReport report = scoringService.score(job, cvText);
-            application.setReport(report);
+            Application application = new Application(jobId, contact, upload.fileName(), saved.toString(), cvText);
+            application.attachReport(scoring.score(job, cvText));
             return repository.save(application);
         } catch (RuntimeException e) {
-            // Không để lại file mồ côi nếu bước chấm điểm thất bại
-            try {
-                Files.deleteIfExists(saved);
-            } catch (IOException ignored) {
-                // bỏ qua: lỗi dọn dẹp không nên che lỗi gốc
-            }
+            storage.delete(saved); // không để lại file mồ côi khi chấm điểm thất bại
             throw e;
         }
-    }
-
-    /** Chấm lại điểm (ví dụ sau khi HR cấu hình thêm Gemini API key). */
-    public Application rescore(String applicationId) {
-        Application app = repository.findById(applicationId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay ho so."));
-        JobPosting job = jobRepository.findById(app.getJobId()).orElse(null);
-        if (job == null) {
-            throw new IllegalArgumentException("Vi tri tuyen dung cua ho so nay khong con ton tai.");
-        }
-        app.setReport(scoringService.score(job, app.getCvText()));
-        return repository.save(app);
     }
 
     public List<Application> listByJob(String jobId) {
         return repository.findByJob(jobId);
     }
 
-    /** Chấm lại toàn bộ hồ sơ của một vị trí (dùng sau khi HR sửa JD/kỹ năng). */
-    public int rescoreByJob(String jobId) {
-        JobPosting job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Vi tri tuyen dung khong ton tai."));
-        int count = 0;
-        for (Application app : repository.findByJob(jobId)) {
-            app.setReport(scoringService.score(job, app.getCvText()));
-            repository.save(app);
-            count++;
-        }
-        return count;
-    }
-
-    /** Ghi nhận quyết định của HR; AI không tham gia vào bước này. */
-    public Application decide(String applicationId, String decision, String note) {
-        Application app = get(applicationId);
-        app.setHrDecision(com.ptit.cvrecruiter.model.HrDecision.from(decision));
-        app.setHrNote(note == null ? "" : note.trim());
-        app.setDecidedAt(java.time.Instant.now().toString());
-        return repository.save(app);
-    }
-
-    /** HR sửa họ tên / liên hệ (ví dụ khi hệ thống đoán tên sai). */
-    public Application updateContact(String applicationId, String name, String email, String phone) {
-        Application app = get(applicationId);
-        if (name != null) {
-            if (name.isBlank()) throw new IllegalArgumentException("Ho ten khong duoc de trong.");
-            app.setCandidateName(name.trim());
-        }
-        if (email != null) {
-            String e = email.trim();
-            if (!e.isEmpty() && !EMAIL.matcher(e).matches()) {
-                throw new IllegalArgumentException("Email khong hop le.");
-            }
-            app.setEmail(e);
-        }
-        if (phone != null) app.setPhone(phone.trim());
-        return repository.save(app);
+    public int countByJob(String jobId) {
+        return repository.countByJob(jobId);
     }
 
     public Application get(String id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay ho so."));
+        return repository.findById(id).orElseThrow(() -> new NotFoundException("Khong tim thay ho so."));
     }
 
-    public void deleteByJob(String jobId) {
-        for (Application a : repository.findByJob(jobId)) {
-            repository.delete(a.getId());
-            deleteCvFile(a);
+    /** Chấm lại một hồ sơ, ví dụ sau khi sửa yêu cầu của vị trí hoặc bật AI. */
+    public Application rescore(String applicationId) {
+        Application app = get(applicationId);
+        app.attachReport(scoring.score(job(app.getJobId()), app.getCvText()));
+        return repository.save(app);
+    }
+
+    /** Chấm lại toàn bộ hồ sơ của một vị trí. */
+    public int rescoreByJob(String jobId) {
+        JobPosting job = job(jobId);
+        List<Application> apps = repository.findByJob(jobId);
+        for (Application app : apps) {
+            app.attachReport(scoring.score(job, app.getCvText()));
+            repository.save(app);
         }
-        deleteJobUploadDir(jobId);
+        return apps.size();
+    }
+
+    /** Ghi nhận quyết định của HR; AI không tham gia bước này. */
+    public Application decide(String applicationId, HrDecision decision, String note) {
+        Application app = get(applicationId);
+        app.decide(decision, note);
+        return repository.save(app);
+    }
+
+    /** HR sửa họ tên, email, số điện thoại (ví dụ khi hệ thống đoán tên sai). */
+    public Application updateContact(String applicationId, String name, String email, String phone) {
+        Application app = get(applicationId);
+        app.updateContact(name, email, phone);
+        return repository.save(app);
     }
 
     public void delete(String applicationId) {
         Application app = get(applicationId);
         repository.delete(applicationId);
-        deleteCvFile(app);
+        if (app.hasCvFile()) storage.delete(Path.of(app.getCvPath()));
     }
 
-    private void deleteCvFile(Application app) {
-        if (app.getCvPath() == null || app.getCvPath().isBlank()) return;
-        try {
-            Files.deleteIfExists(Path.of(app.getCvPath()));
-        } catch (IOException ignored) {
-            // File có thể đã bị xoá tay; không chặn nghiệp vụ
+    public void deleteByJob(String jobId) {
+        for (Application app : repository.findByJob(jobId)) {
+            repository.delete(app.getId());
         }
+        storage.deleteJobFolder(jobId);
     }
 
-    private void deleteJobUploadDir(String jobId) {
-        if (jobId == null || jobId.isBlank()) return;
-        Path dir = config.uploadsDir.resolve(jobId);
-        if (!Files.isDirectory(dir)) return;
-        try (var paths = Files.walk(dir)) {
-            paths.sorted(Comparator.reverseOrder()).forEach(p -> {
-                try {
-                    Files.deleteIfExists(p);
-                } catch (IOException ignored) {
-                    // bỏ qua
-                }
-            });
-        } catch (IOException ignored) {
-            // bỏ qua
+    /** Thông tin HR nhập được ưu tiên; ô nào trống thì đọc từ CV. */
+    private ContactInfo detectContact(CvUpload upload, String cvText) {
+        String name = isBlank(upload.name()) ? ContactExtractor.name(cvText, upload.fileName()) : upload.name();
+        String email = upload.email();
+        if (isBlank(email)) {
+            String found = ContactExtractor.email(cvText);
+            email = ContactInfo.isValidEmail(found) ? found : "";
         }
+        String phone = isBlank(upload.phone()) ? ContactExtractor.phone(cvText) : upload.phone();
+        return new ContactInfo(name, email, phone);
     }
 
-    private Path saveCvFile(String jobId, byte[] bytes) {
-        try {
-            Path dir = config.uploadsDir.resolve(jobId);
-            Files.createDirectories(dir);
-            Path file = dir.resolve(UUID.randomUUID() + ".pdf");
-            Files.write(file, bytes);
-            return file;
-        } catch (IOException e) {
-            throw new IllegalStateException("Khong luu duoc file CV: " + e.getMessage(), e);
-        }
+    private JobPosting job(String jobId) {
+        return jobs.findById(jobId).orElseThrow(() -> new NotFoundException("Vi tri tuyen dung khong ton tai."));
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 }

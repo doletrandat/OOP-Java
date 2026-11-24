@@ -9,18 +9,17 @@ public class CriterionResult {
     private String name = "";
     private CriterionType type = CriterionType.OTHER;
     private String requirement = "";
-    private int weight = 2;
+    private int weight = Criterion.DEFAULT_WEIGHT;
     private CriterionStatus status = CriterionStatus.UNKNOWN;
     private String actual = "";      // giá trị hệ thống đọc được từ CV
     private String evidence = "";    // câu trích dẫn nguyên văn
     private String note = "";        // giải thích ngắn
-    /** RULE = chỉ đối chiếu quy tắc; AI = AI bổ sung/suy luận; BOTH = cả hai cùng xác nhận. */
-    private String source = "RULE";
-    /** true nếu kết luận dựa trên suy luận gián tiếp (ví dụ làm việc ở Mỹ ⇒ biết tiếng Anh). */
+    private CriterionSource source = CriterionSource.RULE;
+    /** true nếu kết luận dựa trên suy luận gián tiếp (ví dụ làm việc ở Mỹ nên biết tiếng Anh). */
     private boolean inferred;
 
-    public CriterionResult() {
-        // Gson cần constructor rỗng
+    private CriterionResult() {
+        // Gson
     }
 
     public CriterionResult(Criterion criterion) {
@@ -30,38 +29,64 @@ public class CriterionResult {
         this.weight = criterion.getWeight();
     }
 
-    public String getName() { return name == null ? "" : name; }
-    public void setName(String name) { this.name = name; }
+    /** Quy tắc kết luận tiêu chí. Trả về chính nó để viết gọn trong các quy tắc. */
+    public CriterionResult conclude(CriterionStatus status, String actual, String evidence, String note) {
+        this.status = status;
+        this.actual = actual == null ? "" : actual;
+        this.evidence = evidence == null ? "" : evidence;
+        this.note = note == null ? "" : note;
+        this.source = CriterionSource.RULE;
+        return this;
+    }
 
-    public CriterionType getType() { return type == null ? CriterionType.OTHER : type; }
-    public void setType(CriterionType type) { this.type = type; }
+    /** Không đủ dữ kiện để kết luận. */
+    public CriterionResult unknown(String note) {
+        return conclude(CriterionStatus.UNKNOWN, "", "", note);
+    }
 
-    public String getRequirement() { return requirement == null ? "" : requirement; }
-    public void setRequirement(String requirement) { this.requirement = requirement; }
+    /** AI đồng ý với kết luận của quy tắc. */
+    public void confirmByAi(String aiNote) {
+        this.source = CriterionSource.BOTH;
+        if (getNote().isBlank() && aiNote != null) this.note = aiNote;
+    }
 
-    public int getWeight() { return weight < 1 || weight > 3 ? 2 : weight; }
-    public void setWeight(int weight) { this.weight = weight; }
+    /** AI thay kết luận của quy tắc (nâng lên hoặc hạ xuống), có ghi chú giải thích. */
+    public void overrideByAi(CriterionStatus status, String actual, String evidence, String note, boolean inferred) {
+        this.status = status;
+        if (actual != null && !actual.isBlank()) this.actual = actual;
+        if (evidence != null && !evidence.isBlank()) this.evidence = evidence;
+        this.note = note == null ? "" : note;
+        this.source = CriterionSource.AI;
+        this.inferred = inferred;
+    }
 
-    public CriterionStatus getStatus() { return status == null ? CriterionStatus.UNKNOWN : status; }
-    public void setStatus(CriterionStatus status) { this.status = status; }
+    /** Bổ sung ghi chú mà không đổi kết luận. */
+    public void annotate(String note) {
+        this.note = note == null ? "" : note;
+    }
 
-    public String getActual() { return actual == null ? "" : actual; }
-    public void setActual(String actual) { this.actual = actual; }
-
-    public String getEvidence() { return evidence == null ? "" : evidence; }
-    public void setEvidence(String evidence) { this.evidence = evidence; }
-
-    public String getNote() { return note == null ? "" : note; }
-    public void setNote(String note) { this.note = note; }
-
-    public String getSource() { return source == null ? "RULE" : source; }
-    public void setSource(String source) { this.source = source; }
-
-    public boolean isInferred() { return inferred; }
-    public void setInferred(boolean inferred) { this.inferred = inferred; }
-
-    /** Hệ số đóng góp của tiêu chí này vào điểm tiêu chí. */
+    /** Hệ số đóng góp vào điểm tiêu chí (0..1). */
     public double scoreValue() {
         return getStatus().value();
     }
+
+    public String getName() { return name == null ? "" : name; }
+
+    public CriterionType getType() { return type == null ? CriterionType.OTHER : type; }
+
+    public String getRequirement() { return requirement == null ? "" : requirement; }
+
+    public int getWeight() { return weight < Criterion.MIN_WEIGHT || weight > Criterion.MAX_WEIGHT ? Criterion.DEFAULT_WEIGHT : weight; }
+
+    public CriterionStatus getStatus() { return status == null ? CriterionStatus.UNKNOWN : status; }
+
+    public String getActual() { return actual == null ? "" : actual; }
+
+    public String getEvidence() { return evidence == null ? "" : evidence; }
+
+    public String getNote() { return note == null ? "" : note; }
+
+    public CriterionSource getSource() { return source == null ? CriterionSource.RULE : source; }
+
+    public boolean isInferred() { return inferred; }
 }

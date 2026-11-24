@@ -1,5 +1,6 @@
 package com.ptit.cvrecruiter.web;
 
+import com.ptit.cvrecruiter.common.NotFoundException;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
@@ -14,7 +15,9 @@ import java.util.regex.Pattern;
 
 /**
  * Bộ định tuyến API gọn nhẹ: khai báo tuyến dạng "/api/admin/jobs/{id}/cv",
- * tự trích tham số đường dẫn và chuẩn hoá xử lý lỗi.
+ * tự trích tham số đường dẫn và đổi ngoại lệ thành mã HTTP:
+ * {@link AuthException} → 401, {@link NotFoundException} → 404,
+ * {@link IllegalArgumentException} (gồm lỗi dữ liệu nhập) → 400, còn lại → 500.
  */
 public class Router {
 
@@ -65,6 +68,8 @@ public class Router {
                 route.handler().handle(ex, params);
             } catch (AuthException e) {
                 Http.sendError(ex, 401, e.getMessage());
+            } catch (NotFoundException e) {
+                Http.sendError(ex, 404, e.getMessage());
             } catch (IllegalArgumentException e) {
                 Http.sendError(ex, 400, e.getMessage() == null ? "Yeu cau khong hop le." : e.getMessage());
             } catch (Exception e) {

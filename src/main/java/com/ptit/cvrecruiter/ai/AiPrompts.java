@@ -12,9 +12,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Nội dung prompt và cách đọc kết quả dùng chung cho mọi nhà cung cấp AI.
- * Tách riêng để Gemini và các API tương thích OpenAI cho ra cùng một chất lượng
- * đánh giá, cùng một schema JSON.
+ * Nội dung prompt gửi cho AI và cách đọc JSON kết quả.
  */
 public final class AiPrompts {
 
@@ -240,11 +238,6 @@ public final class AiPrompts {
         sb.append("<cv>\n").append(trimmedCv).append("\n</cv>\n\n");
         sb.append("Đánh giá CV trong thẻ <cv> cho vị trí trong thẻ <vi_tri>, trả về JSON theo đúng schema.");
         return sb.toString();
-    }
-
-    /** Prompt gộp cho API chỉ nhận một chuỗi (Gemini generateContent). */
-    public static String combinedPrompt(JobPosting job, String cvText) {
-        return systemPrompt() + "\n\n" + userPrompt(job, cvText);
     }
 
     /** Đọc JSON mà model trả về, chấp nhận cả trường hợp bị bọc trong ```json. */

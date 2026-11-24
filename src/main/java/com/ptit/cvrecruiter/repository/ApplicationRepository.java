@@ -2,30 +2,29 @@ package com.ptit.cvrecruiter.repository;
 
 import com.ptit.cvrecruiter.model.Application;
 
-import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-/** Repository cho hồ sơ ứng tuyển. */
+/** Kho hồ sơ ứng tuyển. */
 public class ApplicationRepository {
 
-    private final JsonFileRepository<Application> store;
+    private final Repository<Application> store;
 
-    public ApplicationRepository(JsonFileRepository<Application> store) {
+    public ApplicationRepository(Repository<Application> store) {
         this.store = store;
     }
 
-    public List<Application> findAll() {
-        return store.findAll();
+    /** Hồ sơ của một vị trí, điểm cao xếp trước. */
+    public List<Application> findByJob(String jobId) {
+        return store.findAll().stream()
+                .filter(a -> a.belongsToJob(jobId))
+                .sorted(Comparator.comparingDouble(Application::rankingScore).reversed())
+                .toList();
     }
 
-    public List<Application> findByJob(String jobId) {
-        return findAll().stream()
-                .filter(a -> a.belongsToJob(jobId))
-                .sorted(Comparator.comparing((Application a) ->
-                        a.getReport() == null ? -1.0 : a.getReport().getFinalScore()).reversed())
-                .toList();
+    public int countByJob(String jobId) {
+        return (int) store.findAll().stream().filter(a -> a.belongsToJob(jobId)).count();
     }
 
     public Optional<Application> findById(String id) {

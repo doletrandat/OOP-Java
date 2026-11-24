@@ -24,51 +24,12 @@ Khi bật AI, mỗi CV mất vài giây để chấm, nên cả bộ mất kho�
 demo-data/
   jobs.json                 5 vị trí (trường "folder" trỏ tới thư mục CV tương ứng)
   seed.ps1                  nạp vị trí và CV qua API
-  resumes/<folder>/*.txt    nội dung CV, sửa được
   resumes/<folder>/*.pdf    CV đã kết xuất, dùng để tải lên
 ```
 
 ## Sửa hoặc thêm CV
 
-Sửa file `.txt` rồi tạo lại PDF:
-
-```powershell
-java -cp target/cv-recruiter.jar com.ptit.cvrecruiter.tools.DemoResumeGenerator demo-data/resumes
-```
-
-Cú pháp file `.txt` (xem đầu file `DemoResumeGenerator.java`):
-
-| Dòng | Ý nghĩa |
-| --- | --- |
-| `@style sidebar` | Dòng đầu, chọn mẫu (xem bảng dưới) |
-| `@accent #0f766e` | Màu nhấn, không bắt buộc |
-| `@photo ../../photos/ten.jpg` | Ảnh chân dung (đường dẫn tính từ file `.txt`), không bắt buộc |
-| `# Họ tên` | Tên lớn ở đầu trang |
-| `> ...` | Dòng phụ: chức danh, liên hệ |
-| `## Mục` | Tiêu đề mục |
-| `= Vị trí · Công ty \| 2021 đến nay` | Dòng có thời gian căn phải |
-| `- ...` | Gạch đầu dòng |
-
-Các mẫu, mỗi mẫu một bố cục và phông chữ riêng:
-
-| Mẫu | Bố cục | Phông | Đang dùng cho |
-| --- | --- | --- | --- |
-| `sidebar` | Hai cột, cột trái nền màu nhạt chứa liên hệ, kỹ năng, học vấn | Corbel | Phạm Thu Hà, Alex Tran |
-| `banner` | Dải màu đậm ở đầu trang chứa tên và liên hệ | Tahoma | Sarah Nguyen, Trương Gia Bảo, Trần Đại Phát |
-| `timeline` | Tiêu đề mục và thời gian ở cột trái hẹp | Candara | Hoàng Thị Thu Trang, Lê Thị Ngọc Anh |
-| `elegant` | Có chân, dải màu dọc mép trái, tên chữ mảnh | Constantia | Võ Thanh Tâm, Đỗ Hoàng Long |
-| `classic` | Kiểu truyền thống, tên căn giữa, đường kẻ đôi | Times New Roman | Nguyễn Minh Khoa, Kevin Le |
-| `modern` | Một cột, tiêu đề màu có đường kẻ | Segoe UI | Bùi Văn Nam, Đặng Quốc Việt |
-| `plain`, `word` | Gõ vội trong Word, không định dạng | Arial, Times New Roman | cv-hung, cv-dieu-duong, cv-xin-viec-sales |
-| `notepad`, `typewriter` | Gõ vội trong Notepad | Consolas, Courier New | my-cv, resume-tom |
-
-### Ảnh chân dung
-
-10 CV có ảnh, lưu trong `photos/`. Ảnh lấy từ [thispersondoesnotexist.com](https://thispersondoesnotexist.com): khuôn mặt do AI (StyleGAN) tạo ra, không phải người thật. Ảnh gốc 1024×1024 đã được cắt lấy đầu và vai, thu về 480×480.
-
-Mỗi mẫu đặt ảnh một kiểu: `sidebar` tròn ở đầu cột trái, `banner` tròn trong dải màu, `timeline` và `modern` tròn ở góc phải, `elegant` vuông có khung lệch, `classic` ảnh 3x4 có viền như CV Việt Nam. CV qua loa `cv-hung` có ảnh dán vội ở góc trái.
-
-Phông chữ lấy từ Windows và được nhúng vào PDF; trên Linux mọi mẫu dùng DejaVu. Các phông trên đã được thử: chữ trích xuất lại từ PDF khớp nguyên văn. Không dùng Calibri và Palatino (chữ ghép "ti", "tt" bị đọc thành ký tự lạ), Georgia và Trebuchet (thiếu dấu tiếng Việt).
+Các PDF được tạo bằng một công cụ riêng, không nằm trong repo này (thư mục `cv-demo-generator` cạnh dự án). Sửa nội dung CV ở đó rồi chạy `run.ps1` để tạo lại và chép PDF vào đây.
 
 ## Ứng viên
 

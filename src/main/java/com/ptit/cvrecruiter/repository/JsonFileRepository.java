@@ -17,7 +17,7 @@ import java.util.function.Function;
  * Repository tổng quát lưu dữ liệu dạng danh sách trong một file JSON.
  * Ghi file theo kiểu ghi tạm rồi đổi tên để tránh hỏng dữ liệu.
  */
-public class JsonFileRepository<T> {
+public class JsonFileRepository<T> implements Repository<T> {
 
     private static final class Wrapper<T> {
         List<T> items = new ArrayList<>();
@@ -62,18 +62,21 @@ public class JsonFileRepository<T> {
         }
     }
 
+    @Override
     public List<T> findAll() {
         synchronized (lock) {
             return new ArrayList<>(items);
         }
     }
 
+    @Override
     public Optional<T> findById(String id) {
         synchronized (lock) {
             return items.stream().filter(t -> idGetter.apply(t).equals(id)).findFirst();
         }
     }
 
+    @Override
     public T save(T entity) {
         synchronized (lock) {
             String id = idGetter.apply(entity);
@@ -90,6 +93,7 @@ public class JsonFileRepository<T> {
         }
     }
 
+    @Override
     public boolean delete(String id) {
         synchronized (lock) {
             boolean removed = items.removeIf(t -> idGetter.apply(t).equals(id));
@@ -98,9 +102,4 @@ public class JsonFileRepository<T> {
         }
     }
 
-    public int count() {
-        synchronized (lock) {
-            return items.size();
-        }
-    }
 }

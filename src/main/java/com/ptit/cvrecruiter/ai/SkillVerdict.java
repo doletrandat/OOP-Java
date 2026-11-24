@@ -6,7 +6,7 @@ import com.ptit.cvrecruiter.model.MatchStatus;
 public class SkillVerdict {
 
     private String skill;
-    private String status;     // MATCHED | UNCERTAIN | MISSING (chuỗi trả về từ Gemini)
+    private String status;     // MATCHED | UNCERTAIN | MISSING (chuỗi AI trả về)
     private String evidence;   // câu trích dẫn nguyên văn từ CV
     private String note;       // giải thích ngắn
 

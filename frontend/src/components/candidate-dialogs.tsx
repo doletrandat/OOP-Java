@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { toast } from "sonner"
 
 import {
@@ -24,7 +24,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
-import { api, put, type Application } from "@/lib/api"
+import { applicationsApi, type Application } from "@/lib/api"
 
 export interface ContactTarget {
   id: string
@@ -49,14 +49,16 @@ export function EditContactDialog({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!target) return
+  // Mở cho ứng viên khác thì nạp lại form
+  const [loadedFor, setLoadedFor] = useState<ContactTarget | null>(null)
+  if (target && target !== loadedFor) {
+    setLoadedFor(target)
     setName(target.candidateName)
     setEmail(target.email ?? "")
     setPhone(target.phone ?? "")
     setError(null)
     setBusy(false)
-  }, [target])
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -64,7 +66,7 @@ export function EditContactDialog({
     if (!name.trim()) return setError("Họ tên không được để trống.")
     setBusy(true)
     try {
-      const app = await api<Application>(`/api/admin/applications/${target.id}`, put({ name, email, phone }))
+      const app = await applicationsApi.updateContact(target.id, { name, email, phone })
       toast.success("Đã lưu thông tin ứng viên.")
       onSaved(app)
     } catch (err) {

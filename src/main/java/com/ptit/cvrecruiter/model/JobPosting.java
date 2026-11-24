@@ -1,11 +1,15 @@
 package com.ptit.cvrecruiter.model;
 
+import com.ptit.cvrecruiter.common.ValidationException;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** Vị trí tuyển dụng do HR tạo. */
+/**
+ * Vị trí tuyển dụng do HR tạo. Tự bảo vệ bất biến: luôn có tên và ít nhất một kỹ năng.
+ */
 public class JobPosting {
 
     private String id;
@@ -17,40 +21,69 @@ public class JobPosting {
     private JobStatus status = JobStatus.OPEN;
     private String createdAt = Instant.now().toString();
 
-    public JobPosting() {
-        // Gson cần constructor rỗng
+    private JobPosting() {
+        // Gson
     }
 
     public JobPosting(String title, String department, String description, List<Skill> skills) {
+        this(title, department, description, skills, List.of());
+    }
+
+    public JobPosting(String title, String department, String description,
+                      List<Skill> skills, List<Criterion> criteria) {
         this.id = UUID.randomUUID().toString();
-        this.title = title;
-        this.department = department;
-        this.description = description == null ? "" : description;
-        this.skills = skills == null ? new ArrayList<>() : skills;
+        edit(title, department, description);
+        replaceSkills(skills);
+        replaceCriteria(criteria);
+    }
+
+    /** Sửa thông tin chung; null nghĩa là giữ nguyên giá trị cũ. */
+    public void edit(String title, String department, String description) {
+        if (title != null) {
+            ValidationException.require(!title.isBlank(), "Vui long nhap ten vi tri tuyen dung.");
+            this.title = title.trim();
+        }
+        ValidationException.require(this.title != null, "Vui long nhap ten vi tri tuyen dung.");
+        if (department != null) this.department = department.trim();
+        if (description != null) this.description = description;
+    }
+
+    public void replaceSkills(List<Skill> skills) {
+        ValidationException.require(skills != null && !skills.isEmpty(),
+                "Vui long them it nhat mot ky nang can tim.");
+        this.skills = new ArrayList<>(skills);
+    }
+
+    public void replaceCriteria(List<Criterion> criteria) {
+        this.criteria = criteria == null ? new ArrayList<>() : new ArrayList<>(criteria);
+    }
+
+    public void open() {
+        this.status = JobStatus.OPEN;
+    }
+
+    public void close() {
+        this.status = JobStatus.CLOSED;
+    }
+
+    public boolean isOpen() {
+        return getStatus() == JobStatus.OPEN;
     }
 
     public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
 
     public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
 
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
+    public String getDepartment() { return department == null ? "" : department; }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getDescription() { return description == null ? "" : description; }
 
-    public List<Skill> getSkills() { return skills; }
-    public void setSkills(List<Skill> skills) { this.skills = skills; }
+    public List<Skill> getSkills() { return skills == null ? List.of() : List.copyOf(skills); }
 
-    /** Tiêu chí bổ sung (kinh nghiệm, trình độ, ngoại ngữ...) — có thể rỗng. */
-    public List<Criterion> getCriteria() { return criteria == null ? new ArrayList<>() : criteria; }
-    public void setCriteria(List<Criterion> criteria) { this.criteria = criteria; }
+    /** Tiêu chí bổ sung (kinh nghiệm, trình độ, ngoại ngữ...), có thể rỗng. */
+    public List<Criterion> getCriteria() { return criteria == null ? List.of() : List.copyOf(criteria); }
 
     public JobStatus getStatus() { return status == null ? JobStatus.OPEN : status; }
-    public void setStatus(JobStatus status) { this.status = status; }
 
-    public String getCreatedAt() { return createdAt; }
-    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public String getCreatedAt() { return createdAt == null ? "" : createdAt; }
 }

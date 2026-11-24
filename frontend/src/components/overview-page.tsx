@@ -7,7 +7,8 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Job } from "@/lib/api"
 import { paths } from "@/lib/router"
-import { pipeline, useStore } from "@/lib/store"
+import { pipeline } from "@/lib/pipeline"
+import { useStore } from "@/lib/store"
 
 export function OverviewPage({ onCreateJob }: { onCreateJob: () => void }) {
   const { jobs, apps } = useStore()
@@ -95,7 +96,7 @@ export function OverviewPage({ onCreateJob }: { onCreateJob: () => void }) {
               </EmptyMedia>
               <EmptyTitle>Chưa có vị trí nào</EmptyTitle>
               <EmptyDescription>
-                Tạo một vị trí với danh sách kỹ năng cần tìm. Sau đó kéo các file CV vào để hệ thống chấm và xếp hạng.
+                Tạo một vị trí với danh sách kỹ năng cần tìm. Sau đó tải các file CV lên để hệ thống chấm và xếp hạng.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>

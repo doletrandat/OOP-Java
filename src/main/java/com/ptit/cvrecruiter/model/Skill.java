@@ -1,33 +1,32 @@
 package com.ptit.cvrecruiter.model;
 
-/** Một kỹ năng mà HR yêu cầu trong vị trí tuyển dụng. */
+import com.ptit.cvrecruiter.common.ValidationException;
+
+/** Một kỹ năng HR cần tìm trong CV (đối tượng giá trị, bất biến). */
 public class Skill {
 
     private String name;
     private SkillWeight weight;
 
-    public Skill() {
-        // Gson cần constructor rỗng
+    private Skill() {
+        // Gson
     }
 
     public Skill(String name, SkillWeight weight) {
-        this.name = name;
-        this.weight = weight;
+        ValidationException.require(name != null && !name.isBlank(), "Ten ky nang khong duoc de trong.");
+        this.name = name.trim();
+        this.weight = weight == null ? SkillWeight.PREFERRED : weight;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public SkillWeight getWeight() {
         return weight == null ? SkillWeight.PREFERRED : weight;
     }
 
-    public void setWeight(SkillWeight weight) {
-        this.weight = weight;
+    public boolean isRequired() {
+        return getWeight() == SkillWeight.REQUIRED;
     }
 }

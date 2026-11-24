@@ -19,7 +19,7 @@ class AiPromptsTest {
     private JobPosting job() {
         JobPosting job = new JobPosting("Java Backend", "IT", "Xây dựng hệ thống microservices.",
                 List.of(new Skill("Java", SkillWeight.REQUIRED)));
-        job.setCriteria(List.of(
+        job.replaceCriteria(List.of(
                 new Criterion("Kinh nghiệm", CriterionType.EXPERIENCE, "2", 2),
                 new Criterion("Tiếng Anh", CriterionType.LANGUAGE, "TOEIC 600", 1)));
         return job;
@@ -70,7 +70,7 @@ class AiPromptsTest {
 
     @Test
     void userPromptHandlesMissingDataAndLongCv() {
-        JobPosting bare = new JobPosting("Kế toán", "", "", List.of());
+        JobPosting bare = new JobPosting("Kế toán", "", "", List.of(new Skill("Excel", SkillWeight.PREFERRED)));
         String empty = AiPrompts.userPrompt(bare, "   ", LocalDate.of(2026, 1, 1));
         assertTrue(empty.contains("không trích được chữ nào"));
         assertTrue(empty.contains("\"criteria\": []"));

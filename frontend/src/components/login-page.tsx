@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
-import { api, post } from "@/lib/api"
+import { authApi } from "@/lib/api"
 
 export function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState("")
@@ -21,7 +21,7 @@ export function LoginPage({ onLogin }: { onLogin: (token: string) => void }) {
     setBusy(true)
     setError(null)
     try {
-      const res = await api<{ token: string }>("/api/auth/login", post({ password }))
+      const res = await authApi.login(password)
       onLogin(res.token)
     } catch (err) {
       setError((err as Error).message)

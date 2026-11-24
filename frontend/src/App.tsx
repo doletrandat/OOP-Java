@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { api, auth, post, setUnauthorizedHandler, type Job } from "@/lib/api"
+import { auth, authApi, setUnauthorizedHandler, type Job } from "@/lib/api"
 import { navigate, paths, useRoute } from "@/lib/router"
 import { StoreProvider, useStore } from "@/lib/store"
 
@@ -23,7 +23,7 @@ export default function App() {
   const [token, setToken] = useState(auth.token)
 
   const logout = useCallback((callServer = true) => {
-    if (callServer && auth.token) api("/api/auth/logout", post()).catch(() => {})
+    if (callServer && auth.token) authApi.logout().catch(() => {})
     auth.set(null)
     setToken(null)
   }, [])
