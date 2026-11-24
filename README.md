@@ -53,7 +53,7 @@ Hệ thống chỉ có một giao diện duy nhất: **trang quản trị nội 
 ## 2. Kiến trúc (hướng OOP)
 
 ```
-src/main/java/com/ptit/cvrecruiter/
+src/main/java/cvrecruiter/
 ├── Main.java          # Composition root: tạo mọi đối tượng và tiêm phụ thuộc qua constructor
 ├── config/            # Record bất biến: AppConfig, AiSettings, ScoringWeights, StorageSettings
 │                      #   + ConfigLoader (đọc config.properties, biến môi trường)
