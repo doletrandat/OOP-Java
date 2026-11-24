@@ -174,6 +174,18 @@ public class AdminController {
             Http.sendJson(ex, 200, detail(updated));
         });
 
+        // HR sửa họ tên / email / số điện thoại của ứng viên
+        router.add("PUT", "/api/admin/applications/{id}", (ex, params) -> {
+            requireAuth(ex);
+            Map<String, Object> body = Http.readJsonMap(ex);
+            Application updated = applicationService.updateContact(
+                    params.get("id"),
+                    body.get("name") == null ? null : body.get("name").toString(),
+                    body.get("email") == null ? null : body.get("email").toString(),
+                    body.get("phone") == null ? null : body.get("phone").toString());
+            Http.sendJson(ex, 200, detail(updated));
+        });
+
         router.add("DELETE", "/api/admin/applications/{id}", (ex, params) -> {
             requireAuth(ex);
             applicationService.delete(params.get("id")); // ném lỗi nếu không tồn tại

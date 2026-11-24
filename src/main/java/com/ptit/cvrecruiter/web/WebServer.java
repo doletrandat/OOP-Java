@@ -74,7 +74,7 @@ public class WebServer {
             return;
         }
         String filePath = switch (path) {
-            case "/admin", "/admin/" -> "/admin.html";
+            case "/admin", "/admin/" -> "/index.html";
             default -> path;
         };
         String resource = "/static" + filePath;

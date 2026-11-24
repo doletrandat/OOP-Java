@@ -1,5 +1,6 @@
 package com.ptit.cvrecruiter.service;
 
+import com.ptit.cvrecruiter.util.ContactExtractor;
 import com.ptit.cvrecruiter.config.AppConfig;
 import com.ptit.cvrecruiter.model.Application;
 import com.ptit.cvrecruiter.model.JobPosting;
@@ -49,9 +50,6 @@ public class ApplicationService {
                                       String cvFileName, byte[] cvBytes) {
         JobPosting job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Vi tri tuyen dung khong ton tai."));
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Vui long nhap ho ten ung vien.");
-        }
         String cleanEmail = email == null ? "" : email.trim();
         if (!cleanEmail.isEmpty() && !EMAIL.matcher(cleanEmail).matches()) {
             throw new IllegalArgumentException("Email khong hop le.");
@@ -70,9 +68,18 @@ public class ApplicationService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+        // HR có thể bỏ trống thông tin liên hệ: hệ thống tự đoán từ nội dung CV
+        String cleanName = name == null || name.isBlank()
+                ? ContactExtractor.name(cvText, cvFileName) : name.trim();
+        if (cleanEmail.isEmpty()) {
+            String found = ContactExtractor.email(cvText);
+            if (EMAIL.matcher(found).matches()) cleanEmail = found;
+        }
+        String cleanPhone = phone == null || phone.isBlank() ? ContactExtractor.phone(cvText) : phone.trim();
+
         Path saved = saveCvFile(jobId, cvBytes);
-        Application application = new Application(jobId, name.trim(), cleanEmail,
-                phone == null ? "" : phone.trim(), cvFileName, saved.toString(), cvText);
+        Application application = new Application(jobId, cleanName, cleanEmail,
+                cleanPhone, cvFileName, saved.toString(), cvText);
 
         try {
             MatchReport report = scoringService.score(job, cvText);
@@ -124,6 +131,24 @@ public class ApplicationService {
         app.setHrDecision(com.ptit.cvrecruiter.model.HrDecision.from(decision));
         app.setHrNote(note == null ? "" : note.trim());
         app.setDecidedAt(java.time.Instant.now().toString());
+        return repository.save(app);
+    }
+
+    /** HR sửa họ tên / liên hệ (ví dụ khi hệ thống đoán tên sai). */
+    public Application updateContact(String applicationId, String name, String email, String phone) {
+        Application app = get(applicationId);
+        if (name != null) {
+            if (name.isBlank()) throw new IllegalArgumentException("Ho ten khong duoc de trong.");
+            app.setCandidateName(name.trim());
+        }
+        if (email != null) {
+            String e = email.trim();
+            if (!e.isEmpty() && !EMAIL.matcher(e).matches()) {
+                throw new IllegalArgumentException("Email khong hop le.");
+            }
+            app.setEmail(e);
+        }
+        if (phone != null) app.setPhone(phone.trim());
         return repository.save(app);
     }
 

@@ -13,3 +13,6 @@ dependency-reduced-pom.xml
 .idea/
 *.iml
 .vscode/
+
+# Giao diện React (frontend/)
+frontend/node_modules/
